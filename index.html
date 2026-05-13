@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Rapidpatch AT Pothole Index — Auckland Transport response time data</title>
+<meta name="description" content="Public dashboard of Auckland Transport's pothole response times by suburb. Sourced via Local Government Official Information Act (LGOIMA). Updated quarterly.">
+<link rel="canonical" href="https://www.rapidpatch.co.nz/at-index">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+:root{
+  --asphalt:#0F2540;--orange:#FF9D2E;--chalk:#FAFBF8;--stone:#d9d6cc;
+  --text:#1a1a1a;--muted:#666;--green:#2da14b;--red:#c43c2c;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:var(--chalk);color:var(--text);line-height:1.5;
+}
+.topbar{background:var(--asphalt);color:var(--chalk);padding:12px 24px;font-size:13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.topbar a{color:var(--chalk);text-decoration:none;border-bottom:1px solid var(--orange);font-weight:600}
+.hero{background:var(--asphalt);color:var(--chalk);padding:64px 24px 88px;text-align:center;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 100%,rgba(255,157,46,.08),transparent 60%);pointer-events:none}
+.hero .badge{display:inline-block;background:rgba(255,157,46,.15);color:var(--orange);padding:6px 14px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:20px;border:1px solid rgba(255,157,46,.3)}
+.hero h1{font-size:clamp(36px,5vw,56px);font-weight:900;letter-spacing:-1px;margin:0 0 16px;line-height:1.05;position:relative;z-index:1}
+.hero h1 .accent{color:var(--orange)}
+.hero p.lede{font-size:18px;opacity:.85;max-width:680px;margin:0 auto 8px;position:relative;z-index:1;line-height:1.5}
+.hero .source{font-size:12px;opacity:.6;margin-top:24px;position:relative;z-index:1}
+.headline-stats{background:white;padding:48px 24px;border-bottom:1px solid var(--stone)}
+.headline-stats .wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px}
+.stat-block{padding:24px;border-radius:8px;background:var(--chalk);border-left:4px solid var(--orange);text-align:center}
+.stat-block .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:8px}
+.stat-block .number{font-size:42px;font-weight:900;color:var(--asphalt);letter-spacing:-1px;line-height:1;font-variant-numeric:tabular-nums}
+.stat-block .number.good{color:var(--green)}
+.stat-block .number.bad{color:var(--red)}
+.stat-block .sub{font-size:13px;color:var(--muted);margin-top:6px}
+.notice{background:#fff8e6;border-left:4px solid var(--orange);padding:18px 24px;max-width:1100px;margin:32px auto;border-radius:6px;font-size:14px}
+.notice strong{color:var(--asphalt)}
+section{padding:48px 24px;max-width:1100px;margin:0 auto}
+section h2{font-size:30px;color:var(--asphalt);font-weight:900;letter-spacing:-.5px;margin:0 0 8px}
+section p.lede{color:var(--muted);font-size:16px;margin:0 0 28px;max-width:780px}
+#map{height:520px;border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(15,37,64,.1);background:#e8e6dd}
+.map-legend{display:flex;gap:20px;font-size:13px;color:var(--muted);margin-top:14px;flex-wrap:wrap;align-items:center}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-dot{width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.1)}
+.suburb-table{background:white;border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(15,37,64,.06)}
+.suburb-table table{width:100%;border-collapse:collapse;font-size:15px}
+.suburb-table th{background:var(--asphalt);color:var(--chalk);padding:12px 16px;text-align:left;font-weight:700;font-size:13px;letter-spacing:.5px;text-transform:uppercase}
+.suburb-table th.num{text-align:right}
+.suburb-table td{padding:12px 16px;border-bottom:1px solid var(--stone);color:#333}
+.suburb-table td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.suburb-table tr:last-child td{border-bottom:none}
+.suburb-table tr:hover td{background:var(--chalk)}
+.compliance{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:.3px}
+.compliance.high{background:#e6f4ea;color:#1c5d2f}
+.compliance.med{background:#fff2dc;color:#8a4a00}
+.compliance.low{background:#fde8e6;color:#a82820}
+.findings{background:white;border-radius:8px;padding:32px;box-shadow:0 2px 12px rgba(15,37,64,.06);margin-top:24px}
+.findings h3{color:var(--asphalt);font-size:18px;margin:0 0 12px;font-weight:800}
+.findings p{margin:0 0 14px;font-size:15px;line-height:1.65;color:#333}
+.findings strong{color:var(--asphalt)}
+.method{background:var(--chalk);border-radius:8px;padding:28px;margin-top:24px;font-size:14px;line-height:1.7;color:#444}
+.method h3{color:var(--asphalt);font-size:16px;margin:0 0 12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+.method ul{padding-left:24px;margin:0}
+.method li{margin-bottom:6px}
+.cta-band{background:var(--orange);color:var(--asphalt);padding:48px 24px;text-align:center;margin-top:32px}
+.cta-band h2{margin:0 0 12px;font-size:28px;font-weight:900;color:var(--asphalt)}
+.cta-band p{font-size:16px;max-width:600px;margin:0 auto 20px;color:#3a1a05}
+.cta-band a{display:inline-block;background:var(--asphalt);color:var(--chalk);padding:14px 28px;border-radius:999px;font-weight:800;text-decoration:none;font-size:15px}
+.press-strip{background:var(--asphalt);color:var(--chalk);padding:32px 24px;text-align:center;font-size:14px}
+.press-strip a{color:var(--orange);font-weight:600;text-decoration:none}
+.tag{display:inline-block;padding:3px 10px;background:var(--asphalt);color:var(--orange);border-radius:4px;font-size:11px;font-weight:700;letter-spacing:1px;margin-right:8px;text-transform:uppercase}
+footer{background:#0a1a30;color:rgba(250,251,248,.7);padding:32px 24px;text-align:center;font-size:13px;line-height:1.7}
+footer a{color:var(--orange);text-decoration:none;font-weight:600}
+@media(max-width:540px){
+  .hero{padding:40px 16px 56px}
+  section{padding:32px 16px}
+  #map{height:380px}
+  .headline-stats{padding:32px 16px}
+  .stat-block .number{font-size:32px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div><strong>The Rapidpatch AT Pothole Index</strong></div>
+  <div><a href="https://www.rapidpatch.co.nz/">← rapidpatch.co.nz</a></div>
+</div>
+
+<header class="hero">
+  <div class="badge">LGOIMA-sourced data · Updated quarterly</div>
+  <h1>Auckland Transport's pothole promise:<br><span class="accent">where it's kept, where it's missed.</span></h1>
+  <p class="lede">AT promises that 95% of arterial-road potholes are repaired within 24 hours, and all other sealed roads within 5 days. This dashboard tracks the data — released by AT under the Local Government Official Information Act — to show how that promise holds suburb-by-suburb.</p>
+  <p class="source">Source: AT response to LGOIMA request CAS-PR0R8-Y6J2N5 · Dataset updated <span id="dataDate">[awaiting June 6 2026 data delivery]</span></p>
+</header>
+
+<div class="notice">
+  <strong>Note (May 2026):</strong> This dashboard is built from AT's official data and updates quarterly. The first dataset arrives <strong>June 6, 2026</strong> following our LGOIMA request. Until then, the figures below are <em>illustrative placeholders</em> based on AT's publicly stated targets and our own flag-deployment observations.
+</div>
+
+<div class="headline-stats">
+  <div class="wrap">
+    <div class="stat-block">
+      <div class="label">Reported potholes (12 months)</div>
+      <div class="number" id="totalReported">—</div>
+      <div class="sub">Across Auckland's sealed road network</div>
+    </div>
+    <div class="stat-block">
+      <div class="label">Repaired within 24 hours (arterial)</div>
+      <div class="number good" id="arterialCompliance">—</div>
+      <div class="sub">AT target: 95%</div>
+    </div>
+    <div class="stat-block">
+      <div class="label">Repaired within 5 days (all sealed)</div>
+      <div class="number good" id="overallCompliance">—</div>
+      <div class="sub">AT target: 100%</div>
+    </div>
+    <div class="stat-block">
+      <div class="label">Average response time</div>
+      <div class="number" id="avgResponse">—</div>
+      <div class="sub">Hours, all sealed roads</div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <h2>Where the holes are</h2>
+  <p class="lede">Each dot is a pothole reported to Auckland Transport. Green = repaired within promise. Orange = late. Red = open or repaired more than 14 days after report. Click a dot for detail.</p>
+  <div id="map"></div>
+  <div class="map-legend">
+    <div class="legend-item"><span class="legend-dot" style="background:#2da14b"></span> Repaired within promise</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#FF9D2E"></span> Late (≤14 days)</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#c43c2c"></span> Very late or open (&gt;14 days)</div>
+    <div style="margin-left:auto;color:#999;font-size:12px">Map tiles © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" style="color:#666">OpenStreetMap</a> contributors</div>
+  </div>
+</section>
+
+<section>
+  <h2>Suburb leaderboard</h2>
+  <p class="lede">Auckland suburbs ranked by AT response time performance. Compliance = % of reported potholes repaired within the AT promise window.</p>
+  <div class="suburb-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Suburb</th>
+          <th class="num">Reported (12mo)</th>
+          <th class="num">Avg response</th>
+          <th>Compliance</th>
+        </tr>
+      </thead>
+      <tbody id="suburbTable">
+        <tr><td colspan="5" style="text-align:center;color:#999;padding:32px">Awaiting LGOIMA data delivery (June 6 2026)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Key findings</h2>
+  <div class="findings" id="findings">
+    <h3>Headline findings will land here when the data does</h3>
+    <p>This section will summarise what AT's own data shows once the LGOIMA delivery is processed:</p>
+    <ul>
+      <li>Whether the 95% arterial-road target was actually met across the year</li>
+      <li>Suburbs where AT consistently misses its own promise</li>
+      <li>How AT's published performance compares to its actual response logs</li>
+      <li>Trends quarter-on-quarter once we have multiple LGOIMA cycles</li>
+    </ul>
+    <p>Findings are written as a journalist-ready narrative, not just charts — so press can pick up and quote directly.</p>
+  </div>
+</section>
+
+<section>
+  <div class="method">
+    <h3>Methodology</h3>
+    <ul>
+      <li><strong>Data source:</strong> Auckland Transport response logs released under LGOIMA (Local Government Official Information &amp; Meetings Act) request CAS-PR0R8-Y6J2N5.</li>
+      <li><strong>Period:</strong> 12 months preceding the LGOIMA delivery date (June 6, 2026 anticipated).</li>
+      <li><strong>Universe:</strong> All potholes reported to AT via Report-It app, phone, and online form on AT's sealed road network (~1,400km arterial + ~6,500km other sealed).</li>
+      <li><strong>AT promise targets:</strong> 95% repaired within 24 hours on arterial roads; 100% within 5 days on other sealed roads (per <a href="https://at.govt.nz/about-us/street-maintenance/our-pothole-promise" target="_blank" rel="noopener">AT's Pothole Promise</a>).</li>
+      <li><strong>Compliance definition:</strong> Response time = time from "Report received" to "Defect closed" in AT's logs. We exclude reports closed as "duplicate," "not a pothole," or "out of scope."</li>
+      <li><strong>Refresh cadence:</strong> Quarterly. Each cycle = new LGOIMA request + new dataset.</li>
+      <li><strong>Limitations:</strong> Dashboard reflects reported potholes only. Unreported potholes (a known systemic issue) are not in AT's logs and therefore not here.</li>
+    </ul>
+  </div>
+</section>
+
+<div class="cta-band">
+  <h2>Got a pothole AT won't fix?</h2>
+  <p>Auckland Transport fixes the road. We fix everything else — driveways, body corp carparks, retail centres, fleet yards, retirement villages. Photo a pothole. Fixed-price quote in 10 minutes. 48-hour booking. 12-month warranty.</p>
+  <a href="https://www.rapidpatch.co.nz/">Get a quote →</a>
+</div>
+
+<div class="press-strip">
+  <p><span class="tag">For press</span> Embed-ready counters and chart images available on request. Contact <a href="mailto:fix@rapidpatch.co.nz?subject=AT%20Pothole%20Index%20press%20enquiry">fix@rapidpatch.co.nz</a> or call <strong>027 737 2858</strong>.</p>
+</div>
+
+<footer>
+  <p>The Rapidpatch AT Pothole Index · Maintained by <a href="https://www.rapidpatch.co.nz/">Rapidpatch</a>, Auckland's specialist pothole and driveway repair business.<br>
+  Data sourced from Auckland Transport under LGOIMA. This dashboard is independent of AT and is published in the public interest.<br>
+  Map tiles © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors. Built on <a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>.</p>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="data.js"></script>
+<script>
+// === Stat fill ===
+if (window.AT_INDEX_DATA) {
+  const D = window.AT_INDEX_DATA;
+  if (D.headline) {
+    document.getElementById('totalReported').textContent = D.headline.totalReported || '—';
+    document.getElementById('arterialCompliance').textContent = D.headline.arterialCompliance || '—';
+    document.getElementById('overallCompliance').textContent = D.headline.overallCompliance || '—';
+    document.getElementById('avgResponse').textContent = D.headline.avgResponse || '—';
+    if (D.dataDate) document.getElementById('dataDate').textContent = D.dataDate;
+  }
+  if (D.suburbs && D.suburbs.length) {
+    document.getElementById('suburbTable').innerHTML = D.suburbs.map((s, i) => {
+      const cls = s.compliance >= 95 ? 'high' : s.compliance >= 70 ? 'med' : 'low';
+      return `<tr>
+        <td>${i+1}</td>
+        <td><strong>${s.name}</strong></td>
+        <td class="num">${s.reported.toLocaleString()}</td>
+        <td class="num">${s.avgHours}h</td>
+        <td><span class="compliance ${cls}">${s.compliance}%</span></td>
+      </tr>`;
+    }).join('');
+  }
+  if (D.findings) {
+    document.getElementById('findings').innerHTML = D.findings;
+  }
+}
+
+// === Map ===
+const map = L.map('map', { scrollWheelZoom: false }).setView([-36.875, 174.78], 11);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OSM contributors',
+  maxZoom: 18,
+}).addTo(map);
+
+if (window.AT_INDEX_DATA && window.AT_INDEX_DATA.holes) {
+  window.AT_INDEX_DATA.holes.forEach(h => {
+    const color = h.compliance === 'on_time' ? '#2da14b' : h.compliance === 'late' ? '#FF9D2E' : '#c43c2c';
+    const m = L.circleMarker([h.lat, h.lng], {
+      radius: 5, color: '#fff', weight: 1.5, fillColor: color, fillOpacity: 0.85
+    }).addTo(map);
+    m.bindPopup(`<strong>${h.suburb}</strong><br>Reported: ${h.reported}<br>Repaired: ${h.repaired || '<em>still open</em>'}<br>Response: ${h.responseHours}h`);
+  });
+}
+map.on('click', () => map.scrollWheelZoom.enable());
+map.on('mouseout', () => map.scrollWheelZoom.disable());
+</script>
+</body>
+</html>
