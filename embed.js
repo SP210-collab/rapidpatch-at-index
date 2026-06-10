@@ -165,7 +165,7 @@
   var CSS_DASH = [
     '#rpdash{pointer-events:auto;background:#FAFBF8;color:#1a1a1a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.5;width:100%;position:relative;z-index:1}',
     '#rpdash *{box-sizing:border-box}',
-    'main .rpdash-hide-sib > *:not(#rpdash){display:none !important}',
+    '#rp-pothole-index-v2,#rp-credentials-strip{display:none !important}', /* stale May-2026 placeholder embeds on the anchor post */
     '#rpdash .rpd-hero{background:#0F2540;color:#FAFBF8;padding:56px 24px 64px;text-align:center;position:relative;overflow:hidden}',
     '#rpdash .rpd-hero:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 100%,rgba(255,157,46,.08),transparent 60%);pointer-events:none}',
     '#rpdash .rpd-badge{display:inline-block;background:rgba(255,157,46,.15);color:#FF9D2E;padding:6px 14px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:18px;border:1px solid rgba(255,157,46,.3)}',
@@ -324,17 +324,26 @@
     '<div class="rpd-press"><strong style="color:#FF9D2E;letter-spacing:1px;font-size:11px;text-transform:uppercase;margin-right:8px">For press</strong> First run at the dataset, embed-ready charts, or comment from a 22-year asphalt contractor: <a href="mailto:fix@rapidpatch.co.nz?subject=AT%20Pothole%20Index%20press%20enquiry">fix@rapidpatch.co.nz</a> · <strong>027 737 2858</strong> (Steve Parker, founder)</div>';
   }
 
+  function dashContainer() {
+    // Wix Studio post/page flow container. Prefer the parent of the old May embed
+    // (a direct child of the page container), then a generic Studio container, then main.
+    var old = document.getElementById('rp-pothole-index-v2');
+    if (old && old.parentElement) return old.parentElement;
+    var c = document.querySelector('#SITE_PAGES [class*="-container"]');
+    if (c) return c;
+    return document.querySelector('main') || document.getElementById('PAGES_CONTAINER');
+  }
+
   function injectDash() {
     if (document.getElementById('rpdash')) return true;
-    var main = document.querySelector('main') || document.getElementById('PAGES_CONTAINER');
-    if (!main) return false;
+    var container = dashContainer();
+    if (!container) return false;
     if (!D) { loadData().then(function () { injectDash(); }); return false; }
     ensureStyle('rpdash-css', CSS_DASH);
-    main.classList.add('rpdash-hide-sib');
     var sec = document.createElement('div');
     sec.id = 'rpdash';
     sec.innerHTML = dashHTML();
-    main.appendChild(sec);
+    container.insertBefore(sec, container.firstChild);
     document.title = 'The AT Pothole Index — 26,863 Auckland potholes, mapped | Rapidpatch';
     mapBooted = false;
     setTimeout(function () { bootMap('rpdashCanvas', { big: true }); }, 250);
