@@ -3,10 +3,10 @@
   "built": "2026-06-11",
   "source": "AT LGOIMA CAS-1344360-H7J1V4 Appendix A",
   "topN": 300,
-  "geocoded": 290,
-  "geocodeFails": 10,
-  "coveredDispatches": 12684,
-  "coveredPct": 47.2
+  "geocoded": 289,
+  "geocodeFails": 11,
+  "coveredDispatches": 12618,
+  "coveredPct": 47.0
  },
  "stats": {
   "total": 26863,
@@ -375,13 +375,6 @@
    "lng": 174.96707
   },
   {
-   "road": "Nixon Road",
-   "rawArea": "Rodney",
-   "n": 66,
-   "lat": -36.99307,
-   "lng": 174.7898
-  },
-  {
    "road": "Forest Hill Road",
    "rawArea": "Waitakere",
    "n": 66,
@@ -742,8 +735,8 @@
    "road": "Wilson Road",
    "rawArea": "Rodney",
    "n": 45,
-   "lat": -36.91206,
-   "lng": 174.65301
+   "lat": -36.31173,
+   "lng": 174.57371
   },
   {
    "road": "Takatu Road",
@@ -931,8 +924,8 @@
    "road": "West Coast Road",
    "rawArea": "Rodney",
    "n": 40,
-   "lat": -36.90854,
-   "lng": 174.66368
+   "lat": -36.50234,
+   "lng": 174.47364
   },
   {
    "road": "Tomarata Valley Road",
@@ -1106,8 +1099,8 @@
    "road": "Ireland Road",
    "rawArea": "Rodney",
    "n": 35,
-   "lat": -36.90915,
-   "lng": 174.84243
+   "lat": -36.66056,
+   "lng": 174.56279
   },
   {
    "road": "Kaipara Flats Road",
@@ -1568,8 +1561,8 @@
    "road": "Totara Road",
    "rawArea": "Franklin",
    "n": 25,
-   "lat": -36.77677,
-   "lng": 174.62526
+   "lat": -37.15955,
+   "lng": 175.03499
   },
   {
    "road": "Coulter Road",
