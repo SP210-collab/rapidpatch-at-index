@@ -138,18 +138,8 @@
   }
 
   function armObserver(sec) {
-    var canvas = sec.querySelector('.rpm-map');
-    if (!canvas) return;
-    if ('IntersectionObserver' in window) {
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          if (e.isIntersecting) { bootMap(); io.disconnect(); }
-        });
-      }, { rootMargin: '400px' });
-      io.observe(canvas);
-    } else {
-      bootMap();
-    }
+    // boot directly (deferred a tick); IntersectionObserver proved unreliable inside Wix's hydrated DOM
+    setTimeout(bootMap, 250);
   }
 
   function findAnchor() {
