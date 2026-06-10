@@ -166,6 +166,9 @@
     '#rpdash{pointer-events:auto;background:#FAFBF8;color:#1a1a1a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.5;width:100%;position:relative;z-index:1}',
     '#rpdash *{box-sizing:border-box}',
     '#rp-pothole-index-v2,#rp-credentials-strip{display:none !important}', /* stale May-2026 placeholder embeds on the anchor post */
+    '[id^="TPAMultiSection"]{display:none !important}', /* native blog-post widget — dashboard takes its grid row */
+    '#SITE_PAGES [class*="-container"]{grid-template-rows:auto auto auto !important}', /* Wix grid rows are fixed px; relax so the dashboard row sizes to content */
+    '#rpdash{grid-area:2 / 1 / 3 / 2;width:100%}', /* occupy the content row (between header row 1 and footer row 3) */
     '#rpdash .rpd-hero{background:#0F2540;color:#FAFBF8;padding:56px 24px 64px;text-align:center;position:relative;overflow:hidden}',
     '#rpdash .rpd-hero:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 100%,rgba(255,157,46,.08),transparent 60%);pointer-events:none}',
     '#rpdash .rpd-badge{display:inline-block;background:rgba(255,157,46,.15);color:#FF9D2E;padding:6px 14px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:18px;border:1px solid rgba(255,157,46,.3)}',
