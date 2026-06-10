@@ -152,16 +152,26 @@
     }
   }
 
+  function findAnchor() {
+    // classic editor first, then Studio (footer tag), then end of main
+    var f = document.getElementById('SITE_FOOTER') || document.querySelector('footer');
+    if (f && f.parentNode) return { parent: f.parentNode, before: f };
+    var m = document.querySelector('main');
+    if (m) return { parent: m, before: null };
+    return null;
+  }
+
   function inject() {
     if (document.getElementById('rpmap')) return true;
-    var footer = document.getElementById('SITE_FOOTER');
-    if (!footer || !footer.parentNode) return false;
+    var a = findAnchor();
+    if (!a) return false;
     ensureStyle();
     var sec = document.createElement('section');
     sec.id = 'rpmap';
     sec.setAttribute('aria-label', 'The Auckland Pothole Map');
     sec.innerHTML = sectionHTML();
-    footer.parentNode.insertBefore(sec, footer);
+    if (a.before) a.parent.insertBefore(sec, a.before);
+    else a.parent.appendChild(sec);
     mapBooted = false;
     armObserver(sec);
     return true;
