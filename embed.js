@@ -13,10 +13,11 @@
   window.__rpmapBooted = true;
 
   var p = location.pathname.replace(/\/+$/, '');
-  var MODE = null;
+  var MODE = 'menu'; // menu injection runs on every page
   if (p === '' || p === '/') MODE = 'home';
   else if (p === '/at-index' || p.indexOf('/post/the-rapidpatch-at-pothole-index') === 0) MODE = 'dash';
-  if (!MODE) return;
+
+  var DASH_URL = '/post/the-rapidpatch-at-pothole-index-auckland-transport-s-response-time-data-suburb-by-suburb';
 
   var BASE = 'https://sp210-collab.github.io/rapidpatch-at-index/';
   var DAYS = 884; // 1 Jan 2024 – 3 Jun 2026
@@ -166,9 +167,12 @@
     '#rpdash{pointer-events:auto;background:#FAFBF8;color:#1a1a1a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.5;width:100%;position:relative;z-index:1}',
     '#rpdash *{box-sizing:border-box}',
     '#rp-pothole-index-v2,#rp-credentials-strip{display:none !important}', /* stale May-2026 placeholder embeds on the anchor post */
-    '[id^="TPAMultiSection"]{display:none !important}', /* native blog-post widget — dashboard takes its grid row */
-    '#SITE_PAGES [class*="-container"]{grid-template-rows:auto auto auto !important}', /* Wix grid rows are fixed px; relax so the dashboard row sizes to content */
-    '#rpdash{grid-area:2 / 1 / 3 / 2;width:100%}', /* occupy the content row (between header row 1 and footer row 3) */
+    /* Wix grid rows are fixed px and DOM-appended nodes land below the footer. Re-row the page:
+       header(1) -> dashboard(2) -> article widget(3) -> footer(4). Article stays visible (SEO content). */
+    '#SITE_PAGES [class*="-container"]{grid-template-rows:auto auto auto auto !important}',
+    '#rpdash{grid-area:2 / 1 / 3 / 2;width:100%}',
+    '#SITE_PAGES [class*="-container"] > [id^="TPAMultiSection"]{grid-area:3 / 1 / 4 / 2 !important}',
+    '#SITE_PAGES [class*="-container"] > footer{grid-area:4 / 1 / 5 / 2 !important}',
     '#rpdash .rpd-hero{background:#0F2540;color:#FAFBF8;padding:56px 24px 64px;text-align:center;position:relative;overflow:hidden}',
     '#rpdash .rpd-hero:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 100%,rgba(255,157,46,.08),transparent 60%);pointer-events:none}',
     '#rpdash .rpd-badge{display:inline-block;background:rgba(255,157,46,.15);color:#FF9D2E;padding:6px 14px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:18px;border:1px solid rgba(255,157,46,.3)}',
@@ -353,19 +357,54 @@
     return true;
   }
 
+  /* ================= MENU: "AT Pothole Index" nav item, every page ================= */
+  function injectMenu() {
+    // target every main-menu nav (desktop bar + any hamburger/drawer clone Wix renders)
+    var navs = document.querySelectorAll('nav');
+    for (var i = 0; i < navs.length; i++) {
+      var nav = navs[i];
+      if (!nav.querySelector('a[href*="/pothole-repair"]')) continue;       // not the main menu
+      if (nav.querySelector('a[href*="the-rapidpatch-at-pothole-index"], a[href="/at-index"]')) continue; // already added
+      var items = nav.querySelectorAll('li');
+      if (!items.length) continue;
+      // clone a mid-menu item (FAQ if found, else last) to inherit Wix classes/markup
+      var donor = null;
+      for (var j = 0; j < items.length; j++) {
+        var a = items[j].querySelector('a');
+        if (a && /\/faq$/.test(a.getAttribute('href') || '')) { donor = items[j]; break; }
+      }
+      donor = donor || items[items.length - 1];
+      var li = donor.cloneNode(true);
+      var link = li.querySelector('a');
+      if (!link) continue;
+      link.setAttribute('href', DASH_URL);
+      link.removeAttribute('data-anchor');
+      link.removeAttribute('aria-current');
+      // replace the deepest text node so Wix label spans keep their styling
+      var walker = document.createTreeWalker(li, NodeFilter.SHOW_TEXT, null);
+      var tn, textNodes = [];
+      while ((tn = walker.nextNode())) { if (tn.textContent.trim()) textNodes.push(tn); }
+      if (textNodes.length) {
+        textNodes[0].textContent = 'AT Pothole Index';
+        for (var k = 1; k < textNodes.length; k++) textNodes[k].textContent = '';
+      } else { link.textContent = 'AT Pothole Index'; }
+      li.classList.remove('selected');
+      donor.parentNode.insertBefore(li, donor); // sit just before FAQ
+    }
+  }
+
   /* ---------------- keep-alive ---------------- */
-  var injectFn = MODE === 'home' ? injectHome : injectDash;
+  var injectFn = MODE === 'home' ? injectHome : (MODE === 'dash' ? injectDash : function () {});
+  function tick() { injectMenu(); injectFn(); }
   var t0 = Date.now();
   var iv = setInterval(function () {
-    injectFn();
+    tick();
     if (Date.now() - t0 > 12 * 60 * 1000) clearInterval(iv);
   }, 1500);
   setTimeout(function () {
     clearInterval(iv);
-    var slow = setInterval(function () {
-      injectFn();
-      if (Date.now() - t0 > 12 * 60 * 1000) clearInterval(slow);
-    }, 8000);
+    // menu must survive SPA route changes for the life of the session — slow heartbeat, no cutoff
+    setInterval(tick, 5000);
   }, 2 * 60 * 1000);
-  injectFn();
+  tick();
 })();
