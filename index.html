@@ -3,10 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Rapidpatch AT Pothole Index — Auckland Transport response time data</title>
-<meta name="description" content="Public dashboard of Auckland Transport's pothole response times by suburb. Sourced via Local Government Official Information Act (LGOIMA). Updated quarterly.">
-<link rel="canonical" href="https://www.rapidpatch.co.nz/at-index">
+<title>The Rapidpatch AT Pothole Index — 26,863 Auckland potholes, mapped from AT's own data</title>
+<meta name="description" content="Auckland Transport's pothole dispatch data, released under LGOIMA: 26,863 records mapped. 45.7% of public reports closed with no repair recorded. League table by area, most pothole-plagued roads, spend trend.">
+<link rel="canonical" href="https://sp210-collab.github.io/rapidpatch-at-index/">
+<meta property="og:title" content="The Rapidpatch AT Pothole Index — Auckland's potholes, mapped from AT's own data">
+<meta property="og:description" content="26,863 pothole dispatches from AT's LGOIMA release, mapped. 45.7% of public reports closed with no repair recorded — and AT says it doesn't record why.">
+<meta property="og:type" content="website">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "Dataset",
+ "name": "Auckland Transport pothole dispatch records, Jan 2024 – Jun 2026",
+ "description": "26,863 pothole dispatch records released by Auckland Transport under LGOIMA (ref CAS-1344360-H7J1V4), aggregated and mapped by Rapidpatch: dispatch counts by contract area and road, response-time performance, claims spend, monthly trend.",
+ "url": "https://sp210-collab.github.io/rapidpatch-at-index/",
+ "creator": {"@type": "Organization", "name": "Auckland Transport"},
+ "publisher": {"@type": "Organization", "name": "Rapidpatch", "url": "https://www.rapidpatch.co.nz/"},
+ "temporalCoverage": "2024-01-01/2026-06-03",
+ "spatialCoverage": "Auckland, New Zealand",
+ "license": "Released under the Local Government Official Information and Meetings Act 1987"
+}
+</script>
 <style>
 :root{
   --asphalt:#0F2540;--orange:#FF9D2E;--chalk:#FAFBF8;--stone:#d9d6cc;
@@ -14,59 +31,66 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  background:var(--chalk);color:var(--text);line-height:1.5;
-}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--chalk);color:var(--text);line-height:1.5}
 .topbar{background:var(--asphalt);color:var(--chalk);padding:12px 24px;font-size:13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .topbar a{color:var(--chalk);text-decoration:none;border-bottom:1px solid var(--orange);font-weight:600}
-.hero{background:var(--asphalt);color:var(--chalk);padding:64px 24px 88px;text-align:center;position:relative;overflow:hidden}
+.hero{background:var(--asphalt);color:var(--chalk);padding:64px 24px 72px;text-align:center;position:relative;overflow:hidden}
 .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 100%,rgba(255,157,46,.08),transparent 60%);pointer-events:none}
 .hero .badge{display:inline-block;background:rgba(255,157,46,.15);color:var(--orange);padding:6px 14px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:20px;border:1px solid rgba(255,157,46,.3)}
-.hero h1{font-size:clamp(36px,5vw,56px);font-weight:900;letter-spacing:-1px;margin:0 0 16px;line-height:1.05;position:relative;z-index:1}
+.hero h1{font-size:clamp(34px,5vw,54px);font-weight:900;letter-spacing:-1px;margin:0 0 16px;line-height:1.08;position:relative;z-index:1}
 .hero h1 .accent{color:var(--orange)}
-.hero p.lede{font-size:18px;opacity:.85;max-width:680px;margin:0 auto 8px;position:relative;z-index:1;line-height:1.5}
-.hero .source{font-size:12px;opacity:.6;margin-top:24px;position:relative;z-index:1}
-.headline-stats{background:white;padding:48px 24px;border-bottom:1px solid var(--stone)}
-.headline-stats .wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px}
+.hero p.lede{font-size:18px;opacity:.88;max-width:720px;margin:0 auto 8px;position:relative;z-index:1;line-height:1.55}
+.hero .source{font-size:12px;opacity:.6;margin-top:22px;position:relative;z-index:1}
+.headline-stats{background:white;padding:44px 24px;border-bottom:1px solid var(--stone)}
+.headline-stats .wrap{max-width:1160px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px}
 .stat-block{padding:24px;border-radius:8px;background:var(--chalk);border-left:4px solid var(--orange);text-align:center}
 .stat-block .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:8px}
 .stat-block .number{font-size:42px;font-weight:900;color:var(--asphalt);letter-spacing:-1px;line-height:1;font-variant-numeric:tabular-nums}
-.stat-block .number.good{color:var(--green)}
 .stat-block .number.bad{color:var(--red)}
-.stat-block .sub{font-size:13px;color:var(--muted);margin-top:6px}
-.notice{background:#fff8e6;border-left:4px solid var(--orange);padding:18px 24px;max-width:1100px;margin:32px auto;border-radius:6px;font-size:14px}
-.notice strong{color:var(--asphalt)}
-section{padding:48px 24px;max-width:1100px;margin:0 auto}
+.stat-block .number.good{color:var(--green)}
+.stat-block .sub{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.45}
+section{padding:48px 24px;max-width:1160px;margin:0 auto}
+section.wide{max-width:1400px}
 section h2{font-size:30px;color:var(--asphalt);font-weight:900;letter-spacing:-.5px;margin:0 0 8px}
-section p.lede{color:var(--muted);font-size:16px;margin:0 0 28px;max-width:780px}
-#map{height:520px;border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(15,37,64,.1);background:#e8e6dd}
+section p.lede{color:var(--muted);font-size:16px;margin:0 0 24px;max-width:820px}
+#map{height:72vh;min-height:520px;border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(15,37,64,.12);background:#e8e6dd}
 .map-legend{display:flex;gap:20px;font-size:13px;color:var(--muted);margin-top:14px;flex-wrap:wrap;align-items:center}
 .legend-item{display:flex;align-items:center;gap:6px}
-.legend-dot{width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.1)}
-.suburb-table{background:white;border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(15,37,64,.06)}
-.suburb-table table{width:100%;border-collapse:collapse;font-size:15px}
-.suburb-table th{background:var(--asphalt);color:var(--chalk);padding:12px 16px;text-align:left;font-weight:700;font-size:13px;letter-spacing:.5px;text-transform:uppercase}
-.suburb-table th.num{text-align:right}
-.suburb-table td{padding:12px 16px;border-bottom:1px solid var(--stone);color:#333}
-.suburb-table td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
-.suburb-table tr:last-child td{border-bottom:none}
-.suburb-table tr:hover td{background:var(--chalk)}
-.compliance{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:.3px}
-.compliance.high{background:#e6f4ea;color:#1c5d2f}
-.compliance.med{background:#fff2dc;color:#8a4a00}
-.compliance.low{background:#fde8e6;color:#a82820}
-.findings{background:white;border-radius:8px;padding:32px;box-shadow:0 2px 12px rgba(15,37,64,.06);margin-top:24px}
-.findings h3{color:var(--asphalt);font-size:18px;margin:0 0 12px;font-weight:800}
+.legend-dot{width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+.tablebox{background:white;border-radius:8px;overflow-x:auto;box-shadow:0 2px 12px rgba(15,37,64,.06)}
+.tablebox table{width:100%;border-collapse:collapse;font-size:15px;min-width:760px}
+.tablebox th{background:var(--asphalt);color:var(--chalk);padding:12px 14px;text-align:left;font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+.tablebox th.num,.tablebox td.num{text-align:right}
+.tablebox td{padding:12px 14px;border-bottom:1px solid var(--stone);color:#333}
+.tablebox td.num{font-variant-numeric:tabular-nums;font-weight:600}
+.tablebox tr:last-child td{border-bottom:none}
+.tablebox tr:hover td{background:var(--chalk)}
+.tablebox .boards{display:block;font-size:12px;color:var(--muted);font-weight:400;margin-top:2px}
+.grade{display:inline-block;min-width:38px;text-align:center;padding:4px 10px;border-radius:6px;font-weight:900;font-size:15px}
+.grade.gA{background:#e6f4ea;color:#1c5d2f}
+.grade.gB{background:#eef7e6;color:#3c6e1f}
+.grade.gC{background:#fff2dc;color:#8a4a00}
+.grade.gD{background:#ffe3cf;color:#a04400}
+.grade.gF{background:#fde8e6;color:#a82820}
+.grade.gN{background:#eee;color:#777}
+.binned{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}
+.binned.low{background:#e6f4ea;color:#1c5d2f}
+.binned.med{background:#fff2dc;color:#8a4a00}
+.binned.high{background:#fde8e6;color:#a82820}
+.findings{background:white;border-radius:8px;padding:32px;box-shadow:0 2px 12px rgba(15,37,64,.06)}
+.findings h3{color:var(--asphalt);font-size:18px;margin:22px 0 10px;font-weight:800}
+.findings h3:first-child{margin-top:0}
 .findings p{margin:0 0 14px;font-size:15px;line-height:1.65;color:#333}
 .findings strong{color:var(--asphalt)}
-.method{background:var(--chalk);border-radius:8px;padding:28px;margin-top:24px;font-size:14px;line-height:1.7;color:#444}
+.chart-box{background:white;border-radius:8px;padding:28px;box-shadow:0 2px 12px rgba(15,37,64,.06)}
+.chart-box svg{width:100%;height:auto;display:block}
+.method{background:var(--chalk);border:1px solid var(--stone);border-radius:8px;padding:28px;margin-top:8px;font-size:14px;line-height:1.7;color:#444}
 .method h3{color:var(--asphalt);font-size:16px;margin:0 0 12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
 .method ul{padding-left:24px;margin:0}
-.method li{margin-bottom:6px}
+.method li{margin-bottom:7px}
 .cta-band{background:var(--orange);color:var(--asphalt);padding:48px 24px;text-align:center;margin-top:32px}
 .cta-band h2{margin:0 0 12px;font-size:28px;font-weight:900;color:var(--asphalt)}
-.cta-band p{font-size:16px;max-width:600px;margin:0 auto 20px;color:#3a1a05}
+.cta-band p{font-size:16px;max-width:620px;margin:0 auto 20px;color:#3a1a05}
 .cta-band a{display:inline-block;background:var(--asphalt);color:var(--chalk);padding:14px 28px;border-radius:999px;font-weight:800;text-decoration:none;font-size:15px}
 .press-strip{background:var(--asphalt);color:var(--chalk);padding:32px 24px;text-align:center;font-size:14px}
 .press-strip a{color:var(--orange);font-weight:600;text-decoration:none}
@@ -74,9 +98,9 @@ section p.lede{color:var(--muted);font-size:16px;margin:0 0 28px;max-width:780px
 footer{background:#0a1a30;color:rgba(250,251,248,.7);padding:32px 24px;text-align:center;font-size:13px;line-height:1.7}
 footer a{color:var(--orange);text-decoration:none;font-weight:600}
 @media(max-width:540px){
-  .hero{padding:40px 16px 56px}
+  .hero{padding:40px 16px 52px}
   section{padding:32px 16px}
-  #map{height:380px}
+  #map{height:60vh;min-height:380px}
   .headline-stats{padding:32px 16px}
   .stat-block .number{font-size:32px}
 }
@@ -90,168 +114,225 @@ footer a{color:var(--orange);text-decoration:none;font-weight:600}
 </div>
 
 <header class="hero">
-  <div class="badge">LGOIMA-sourced data · Updated quarterly</div>
-  <h1>Auckland Transport's pothole promise:<br><span class="accent">where it's kept, where it's missed.</span></h1>
-  <p class="lede">AT promises that 95% of arterial-road potholes are repaired within 24 hours, and all other sealed roads within 5 days. This dashboard tracks the data — released by AT under the Local Government Official Information Act — to show how that promise holds suburb-by-suburb.</p>
-  <p class="source">Source: AT response to LGOIMA request CAS-PR0R8-Y6J2N5 · Dataset updated <span id="dataDate">[awaiting June 6 2026 data delivery]</span></p>
+  <div class="badge">Official AT data · LGOIMA CAS-1344360-H7J1V4 · Jan 2024 – Jun 2026</div>
+  <h1>26,863 potholes.<br><span class="accent">Auckland Transport's own data, mapped.</span></h1>
+  <p class="lede">In June 2026 Auckland Transport released its full pothole dispatch log to Rapidpatch under the Local Government Official Information and Meetings Act — every pothole job across its contract areas for 29 months. This page maps it, ranks it, and reports what it shows. The numbers are AT's, not ours.</p>
+  <p class="source">Source: AT response to LGOIMA request CAS-1344360-H7J1V4, released 9 June 2026 · Appendix A, CT_DISPATCH, 26,863 records</p>
 </header>
-
-<div class="notice">
-  <strong>Note (May 2026):</strong> This dashboard is built from AT's official data and updates quarterly. The first dataset arrives <strong>June 6, 2026</strong> following our LGOIMA request. Until then, the figures below are <em>illustrative placeholders</em> based on AT's publicly stated targets and our own flag-deployment observations.
-</div>
 
 <div class="headline-stats">
   <div class="wrap">
     <div class="stat-block">
-      <div class="label">Reported potholes (12 months)</div>
-      <div class="number" id="totalReported">—</div>
-      <div class="sub">Across Auckland's sealed road network</div>
+      <div class="label">Pothole dispatches logged</div>
+      <div class="number" id="stTotal">—</div>
+      <div class="sub">1 Jan 2024 – 3 Jun 2026, all AT contract areas</div>
     </div>
     <div class="stat-block">
-      <div class="label">Repaired within 24 hours (arterial)</div>
-      <div class="number good" id="arterialCompliance">—</div>
-      <div class="sub">AT target: 95%</div>
+      <div class="label">Public reports closed, no repair recorded</div>
+      <div class="number bad" id="stBinned">—</div>
+      <div class="sub">Of 14,900 phone/online reports. AT says it does not record why.</div>
     </div>
     <div class="stat-block">
-      <div class="label">Repaired within 5 days (all sealed)</div>
-      <div class="number good" id="overallCompliance">—</div>
-      <div class="sub">AT target: 100%</div>
+      <div class="label">Responses within AT's own target</div>
+      <div class="number good" id="stTarget">—</div>
+      <div class="sub">Of completed dispatches with a logged target. When AT dispatches, it's fast.</div>
     </div>
     <div class="stat-block">
-      <div class="label">Average response time</div>
-      <div class="number" id="avgResponse">—</div>
-      <div class="sub">Hours, all sealed roads</div>
+      <div class="label">Paid to contractors in itemised claims</div>
+      <div class="number" id="stSpend">—</div>
+      <div class="sub">29 months. Undercount — one contract area's lump-sum payments excluded by AT.</div>
     </div>
   </div>
 </div>
 
-<section>
-  <h2>Where the holes are</h2>
-  <p class="lede">Each dot is a pothole reported to Auckland Transport. Green = repaired within promise. Orange = late. Red = open or repaired more than 14 days after report. Click a dot for detail.</p>
+<section class="wide">
+  <h2>The pothole map of Auckland</h2>
+  <p class="lede">Every dot is a road, sized by how many pothole dispatches AT logged on it — from Rodney to Franklin, Waiheke to the Waitākeres. Heat shows where Auckland's network is breaking. Click a dot for the road's count. <span id="covNote"></span></p>
   <div id="map"></div>
   <div class="map-legend">
-    <div class="legend-item"><span class="legend-dot" style="background:#2da14b"></span> Repaired within promise</div>
-    <div class="legend-item"><span class="legend-dot" style="background:#FF9D2E"></span> Late (≤14 days)</div>
-    <div class="legend-item"><span class="legend-dot" style="background:#c43c2c"></span> Very late or open (&gt;14 days)</div>
-    <div style="margin-left:auto;color:#999;font-size:12px">Map tiles © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" style="color:#666">OpenStreetMap</a> contributors</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#FF9D2E"></span> Road, sized by dispatch count</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#C04400"></span> Heat = dispatch density</div>
+    <div style="margin-left:auto;color:#999;font-size:12px">Map tiles © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" style="color:#666">OpenStreetMap</a> contributors · Road positions geocoded from road names (AT released no coordinates)</div>
   </div>
 </section>
 
 <section>
-  <h2>Suburb leaderboard</h2>
-  <p class="lede">Auckland suburbs ranked by AT response time performance. Compliance = % of reported potholes repaired within the AT promise window.</p>
-  <div class="suburb-table">
+  <h2>The league table</h2>
+  <p class="lede">AT's eight maintenance contract areas, ranked. "Public reports binned" = phone/online pothole reports closed "No Action Required" — no repair recorded, and AT holds no record of the reason (it declined that part of our request under s17(e): the information does not exist).</p>
+  <div class="tablebox">
     <table>
       <thead>
         <tr>
-          <th>Rank</th>
-          <th>Suburb</th>
-          <th class="num">Reported (12mo)</th>
-          <th class="num">Avg response</th>
-          <th>Compliance</th>
+          <th>Area</th>
+          <th class="num">Dispatches</th>
+          <th class="num">Public reports binned</th>
+          <th class="num">Responses on target</th>
+          <th class="num">P90 response (public)</th>
+          <th class="num">Claims paid</th>
+          <th>Grade</th>
         </tr>
       </thead>
-      <tbody id="suburbTable">
-        <tr><td colspan="5" style="text-align:center;color:#999;padding:32px">Awaiting LGOIMA data delivery (June 6 2026)</td></tr>
-      </tbody>
+      <tbody id="leagueTable"></tbody>
     </table>
   </div>
 </section>
 
 <section>
-  <h2>Key findings</h2>
-  <div class="findings" id="findings">
-    <h3>Headline findings will land here when the data does</h3>
-    <p>This section will summarise what AT's own data shows once the LGOIMA delivery is processed:</p>
-    <ul>
-      <li>Whether the 95% arterial-road target was actually met across the year</li>
-      <li>Suburbs where AT consistently misses its own promise</li>
-      <li>How AT's published performance compares to its actual response logs</li>
-      <li>Trends quarter-on-quarter once we have multiple LGOIMA cycles</li>
-    </ul>
-    <p>Findings are written as a journalist-ready narrative, not just charts — so press can pick up and quote directly.</p>
+  <h2>Auckland's most pothole-plagued roads</h2>
+  <p class="lede">By dispatch count over 29 months. Rural Rodney and Franklin dominate — 20 of the top 25 are rural roads.</p>
+  <div class="tablebox">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Road</th><th>Area</th><th class="num">Pothole dispatches</th><th class="num">≈ one every</th></tr>
+      </thead>
+      <tbody id="roadsTable"></tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Pothole season is real</h2>
+  <p class="lede">Monthly dispatches across the full dataset. Winter (June–September) runs at 1.77× the rest of the year. July 2025 — 2,029 dispatches — is the worst month on record.</p>
+  <div class="chart-box" id="trendBox"></div>
+</section>
+
+<section>
+  <h2>What the data shows</h2>
+  <div class="findings">
+    <h3>1. Nearly half of public pothole reports go nowhere — and AT can't say why</h3>
+    <p>Aucklanders filed <strong>14,900</strong> pothole reports by phone and online in 29 months. <strong>6,813 of them — 45.7% — were closed "No Action Required"</strong>: no repair recorded. When AT's own patrols spot a pothole, just 1.6% end that way. Some of the public's reports will be duplicates or holes below AT's intervention threshold — but nobody can say how many, because AT told us it <strong>does not record the reason</strong> a report is binned, declining that part of the request under s17(e) of LGOIMA. What doesn't get measured doesn't get fixed.</p>
+    <h3>2. Rodney is a different planet</h3>
+    <p>In the North Rural contract area — Rodney — <strong>85.9% of public pothole reports were closed with no repair recorded</strong>. Rodney also logged the most pothole dispatches of any area (6,703) and is home to the region's most pothole-plagued road: <strong>Wayby Valley Road, with 186 dispatches — one every 4.7 days</strong>.</p>
+    <h3>3. When AT does dispatch, it's genuinely fast</h3>
+    <p>Credit where due: <strong>96.1% of completed dispatches met AT's own response target</strong>. Median response on completed public reports runs 0.5–8 hours by area. The grievance in this data isn't speed — it's what never gets dispatched at all. (Response is not the same as a repair that lasts; this dataset doesn't measure durability.)</p>
+    <h3>4. Central Auckland misses its own targets most</h3>
+    <p>The Central area — Puketāpapa, Albert-Eden, Maungakiekie-Tāmaki, Ōrākei, Waitematā — hit its response target just <strong>85.4%</strong> of the time, the worst in Auckland, with a 90th-percentile response of <strong>3.5 days</strong> on public reports. It also consumed the most claims spend: $1.22M.</p>
+    <h3>5. The bill is climbing</h3>
+    <p>AT paid contractors <strong>at least $4.87M in itemised pothole claims over 29 months</strong> — and the run-rate rose <strong>26% year-on-year</strong> ($1.80M in the 12 months to May 2025 → $2.28M in the 12 months to May 2026). That's an undercount: one contract area's pothole work is paid inside a monthly lump sum AT excluded from the data.</p>
+    <h3>6. One emergency report in five: no action</h3>
+    <p>Even among public reports AT itself classed as <strong>Emergency</strong>, <strong>19.5% (398 of 2,038)</strong> were closed with no repair recorded.</p>
   </div>
 </section>
 
 <section>
   <div class="method">
-    <h3>Methodology</h3>
+    <h3>Methodology &amp; caveats</h3>
     <ul>
-      <li><strong>Data source:</strong> Auckland Transport response logs released under LGOIMA (Local Government Official Information &amp; Meetings Act) request CAS-PR0R8-Y6J2N5.</li>
-      <li><strong>Period:</strong> 12 months preceding the LGOIMA delivery date (June 6, 2026 anticipated).</li>
-      <li><strong>Universe:</strong> All potholes reported to AT via Report-It app, phone, and online form on AT's sealed road network (~1,400km arterial + ~6,500km other sealed).</li>
-      <li><strong>AT promise targets:</strong> 95% repaired within 24 hours on arterial roads; 100% within 5 days on other sealed roads (per <a href="https://at.govt.nz/about-us/street-maintenance/our-pothole-promise" target="_blank" rel="noopener">AT's Pothole Promise</a>).</li>
-      <li><strong>Compliance definition:</strong> Response time = time from "Report received" to "Defect closed" in AT's logs. We exclude reports closed as "duplicate," "not a pothole," or "out of scope."</li>
-      <li><strong>Refresh cadence:</strong> Quarterly. Each cycle = new LGOIMA request + new dataset.</li>
-      <li><strong>Limitations:</strong> Dashboard reflects reported potholes only. Unreported potholes (a known systemic issue) are not in AT's logs and therefore not here.</li>
+      <li><strong>Source:</strong> Auckland Transport's response to LGOIMA request <strong>CAS-1344360-H7J1V4</strong> (released 9 June 2026): Appendix A, sheet CT_DISPATCH — 26,863 pothole dispatch records, 1 January 2024 – 3 June 2026, with contract area, road, priority, call type, status, claim value and target vs actual response time per record.</li>
+      <li><strong>"Public reports"</strong> = records with call type <em>Call Centre</em> (phone/online/app), 14,900 records. Patrol, contractor and council-logged jobs counted separately.</li>
+      <li><strong>"Binned" / "no repair recorded"</strong> = call status <em>No Action Required</em>. This plausibly includes duplicates, reports on private land or non-AT roads, and holes below AT's intervention threshold (&gt;100&nbsp;mm wide or &gt;50&nbsp;mm deep, per AT's maintenance spec). AT holds no breakdown of reasons — it declined that part of the request under LGOIMA s17(e). We therefore report the rate, not a cause.</li>
+      <li><strong>Response performance</strong> = actual vs target response time on completed dispatches, both as logged by AT. Response ≠ permanence of repair; this dataset says nothing about repairs that later failed.</li>
+      <li><strong>Spend</strong> = sum of itemised claim values ($4.87M). South Rural's pothole repairs are paid in a monthly lump sum covering other work; AT supplied only that area's out-of-lump-sum claims, so the true total is higher.</li>
+      <li><strong>Map positions:</strong> AT released road names, not coordinates. We geocoded the top 300 roads by dispatch count (<span id="covNote2"></span> of all dispatches) via OpenStreetMap Nominatim; dots mark the road, not individual potholes. Roads that failed to geocode are omitted from the map but counted everywhere else.</li>
+      <li><strong>Refresh cadence:</strong> annual LGOIMA re-request — this page is the first entry in the Pothole Report Card series.</li>
+      <li><strong>Full dataset:</strong> available to journalists on request, as released by AT.</li>
     </ul>
   </div>
 </section>
 
 <div class="cta-band">
   <h2>Got a pothole AT won't fix?</h2>
-  <p>Auckland Transport fixes the road. We fix everything else — driveways, body corp carparks, retail centres, fleet yards, retirement villages. Photo a pothole. Fixed-price quote in 10 minutes. 48-hour booking. 12-month warranty.</p>
-  <a href="https://www.rapidpatch.co.nz/">Get a quote →</a>
+  <p>Auckland Transport fixes the road. We fix everything else — driveways, body corp carparks, retail centres, fleet yards, retirement villages. Photo a pothole. Fixed-price quote. 12-month warranty.</p>
+  <a href="https://www.rapidpatch.co.nz/form">Get a quote →</a>
 </div>
 
 <div class="press-strip">
-  <p><span class="tag">For press</span> Embed-ready counters and chart images available on request. Contact <a href="mailto:fix@rapidpatch.co.nz?subject=AT%20Pothole%20Index%20press%20enquiry">fix@rapidpatch.co.nz</a> or call <strong>027 737 2858</strong>.</p>
+  <p><span class="tag">For press</span> First run at the dataset, embed-ready charts, or comment from a 22-year asphalt contractor: <a href="mailto:fix@rapidpatch.co.nz?subject=AT%20Pothole%20Index%20press%20enquiry">fix@rapidpatch.co.nz</a> · <strong>027 737 2858</strong> (Steve Parker, founder).</p>
 </div>
 
 <footer>
-  <p>The Rapidpatch AT Pothole Index · Maintained by <a href="https://www.rapidpatch.co.nz/">Rapidpatch</a>, Auckland's specialist pothole and driveway repair business.<br>
-  Data sourced from Auckland Transport under LGOIMA. This dashboard is independent of AT and is published in the public interest.<br>
-  Map tiles © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors. Built on <a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>.</p>
+  <p>The Rapidpatch AT Pothole Index · Maintained by <a href="https://www.rapidpatch.co.nz/">Rapidpatch</a>, New Zealand's pothole repair specialist.<br>
+  Data sourced from Auckland Transport under LGOIMA, ref CAS-1344360-H7J1V4. This dashboard is independent of AT and published in the public interest.<br>
+  Map tiles © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors · Geocoding © OSM/Nominatim · Built on <a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>.</p>
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="data.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script>
-// === Stat fill ===
-if (window.AT_INDEX_DATA) {
-  const D = window.AT_INDEX_DATA;
-  if (D.headline) {
-    document.getElementById('totalReported').textContent = D.headline.totalReported || '—';
-    document.getElementById('arterialCompliance').textContent = D.headline.arterialCompliance || '—';
-    document.getElementById('overallCompliance').textContent = D.headline.overallCompliance || '—';
-    document.getElementById('avgResponse').textContent = D.headline.avgResponse || '—';
-    if (D.dataDate) document.getElementById('dataDate').textContent = D.dataDate;
-  }
-  if (D.suburbs && D.suburbs.length) {
-    document.getElementById('suburbTable').innerHTML = D.suburbs.map((s, i) => {
-      const cls = s.compliance >= 95 ? 'high' : s.compliance >= 70 ? 'med' : 'low';
-      return `<tr>
-        <td>${i+1}</td>
-        <td><strong>${s.name}</strong></td>
-        <td class="num">${s.reported.toLocaleString()}</td>
-        <td class="num">${s.avgHours}h</td>
-        <td><span class="compliance ${cls}">${s.compliance}%</span></td>
-      </tr>`;
-    }).join('');
-  }
-  if (D.findings) {
-    document.getElementById('findings').innerHTML = D.findings;
-  }
-}
+const D = {"meta":{"built":"2026-06-11","source":"AT LGOIMA CAS-1344360-H7J1V4 Appendix A","topN":300,"geocoded":290,"geocodeFails":10,"coveredDispatches":12684,"coveredPct":47.2},"stats":{"total":26863,"publicReports":14900,"publicBinned":6813,"publicBinnedPct":45.7,"onTargetPct":96.1,"spend":4871025,"spanFrom":"2024-01-01","spanTo":"2026-06-03"},"areas":[{"area":"South Urban","boards":"Papakura, Māngere-Ōtāhuhu, Ōtara-Papatoetoe, Howick, Manurewa","n":2600,"publicBinnedPct":27.5,"onTargetPct":99.1,"p90h":10.2,"spend":471007,"grade":"A"},{"area":"South Rural","boards":"Franklin","n":5569,"publicBinnedPct":27.8,"onTargetPct":98.4,"p90h":12.8,"spend":712718,"grade":"A-"},{"area":"West","boards":"Waitākere Ranges, Whau, Henderson-Massey","n":3945,"publicBinnedPct":41.8,"onTargetPct":91.5,"p90h":43.0,"spend":534389,"grade":"C"},{"area":"Waiheke","boards":"Waiheke","n":696,"publicBinnedPct":44.6,"onTargetPct":94.3,"p90h":18.6,"spend":166538,"grade":"C"},{"area":"Central","boards":"Puketāpapa, Albert-Eden, Maungakiekie-Tāmaki, Ōrākei, Waitematā","n":3698,"publicBinnedPct":47.9,"onTargetPct":85.4,"p90h":85.0,"spend":1222956,"grade":"D"},{"area":"North Urban","boards":"Devonport-Takapuna, Hibiscus & Bays, Kaipātiki, Upper Harbour","n":3530,"publicBinnedPct":51.4,"onTargetPct":97.9,"p90h":20.6,"spend":1158632,"grade":"D"},{"area":"North Rural","boards":"Rodney","n":6703,"publicBinnedPct":85.9,"onTargetPct":99.0,"p90h":20.9,"spend":469733,"grade":"F"},{"area":"Gt Barrier","boards":"Aotea / Great Barrier","n":122,"publicBinnedPct":0.0,"onTargetPct":100.0,"p90h":215.5,"spend":135051,"grade":"n/a"}],"roads":[{"road":"Wayby Valley Road","rawArea":"Rodney","n":186,"lat":-36.30828,"lng":174.55488},{"road":"Upper Waiwera Road","rawArea":"Rodney","n":170,"lat":-36.55588,"lng":174.6065},{"road":"Ararimu Road","rawArea":"Franklin","n":161,"lat":-37.14132,"lng":175.03777},{"road":"Huia Road","rawArea":"Waitakere","n":161,"lat":-36.94364,"lng":174.64912},{"road":"Clevedon-Kawakawa Road","rawArea":"Franklin","n":145,"lat":-36.94822,"lng":175.16897},{"road":"Whitford-Maraetai Road","rawArea":"Franklin","n":142,"lat":-36.88549,"lng":175.01607},{"road":"Matakana Valley Road","rawArea":"Rodney","n":142,"lat":-36.34938,"lng":174.71398},{"road":"Coatesville Riverhead Highway","rawArea":"Rodney","n":128,"lat":-36.73939,"lng":174.62145},{"road":"Papakura/Clevedon Road","rawArea":"Franklin","n":126,"lat":-37.00034,"lng":175.03021},{"road":"Tapu Road","rawArea":"Rodney","n":124,"lat":-36.76355,"lng":174.5382},{"road":"Scott Road","rawArea":"Albany","n":112,"lat":-36.91885,"lng":174.65212},{"road":"Run Road","rawArea":"Rodney","n":112,"lat":-36.34576,"lng":174.36576},{"road":"Waiuku Road","rawArea":"Franklin","n":111,"lat":-37.2263,"lng":174.86777},{"road":"Omaha Flats Road","rawArea":"Rodney","n":110,"lat":-36.34035,"lng":174.75079},{"road":"Great South Road","rawArea":"Manurewa-Papakura","n":107,"lat":-37.10522,"lng":174.95051},{"road":"Tauhoa Road","rawArea":"Rodney","n":105,"lat":-36.40374,"lng":174.53491},{"road":"Cape Hill Road","rawArea":"Franklin","n":94,"lat":-37.19081,"lng":174.90605},{"road":"Whangaripo Valley Road","rawArea":"Rodney","n":94,"lat":-36.28166,"lng":174.59923},{"road":"Ahuroa Road","rawArea":"Rodney","n":94,"lat":-36.50541,"lng":174.64409},{"road":"Ararimu Valley Road","rawArea":"Rodney","n":94,"lat":-36.72447,"lng":174.55212},{"road":"West Coast Road","rawArea":"Waitakere","n":93,"lat":-36.90992,"lng":174.62372},{"road":"Wainui Road","rawArea":"Rodney","n":90,"lat":-36.60631,"lng":174.63949},{"road":"Matua Road","rawArea":"Rodney","n":89,"lat":-36.7634,"lng":174.53193},{"road":"Atkins Road","rawArea":"Rodney","n":88,"lat":-36.19916,"lng":174.64183},{"road":"Waiteitei Road","rawArea":"Rodney","n":84,"lat":-36.27801,"lng":174.566},{"road":"Mahurangi East Road","rawArea":"Rodney","n":83,"lat":-36.40342,"lng":174.71234},{"road":"Awhitu Road","rawArea":"Franklin","n":82,"lat":-37.23755,"lng":174.70634},{"road":"Wright Road","rawArea":"Rodney","n":82,"lat":-36.3563,"lng":174.69437},{"road":"Triangle Road","rawArea":"Waitakere","n":80,"lat":-36.84453,"lng":174.62516},{"road":"Kingseat Road","rawArea":"Franklin","n":75,"lat":-37.14678,"lng":174.79699},{"road":"Woodcocks Road","rawArea":"Rodney","n":75,"lat":-36.43178,"lng":174.59658},{"road":"Massey Road","rawArea":"Manukau","n":74,"lat":-36.96717,"lng":174.82469},{"road":"Whitford Road (Whitford)","rawArea":"Franklin","n":72,"lat":-36.91397,"lng":174.92872},{"road":"Muriwai Valley Road","rawArea":"Rodney","n":72,"lat":-36.8058,"lng":174.47407},{"road":"Krippner Road","rawArea":"Rodney","n":72,"lat":-36.51669,"lng":174.65956},{"road":"Hibiscus Coast Highway","rawArea":"Albany","n":71,"lat":-36.60515,"lng":174.69052},{"road":"Mcnicol Road","rawArea":"Franklin","n":69,"lat":-36.99509,"lng":175.04805},{"road":"Piha Road","rawArea":"Waitakere","n":68,"lat":-36.96092,"lng":174.47675},{"road":"Whitford Park Road","rawArea":"Franklin","n":67,"lat":-36.9516,"lng":174.96707},{"road":"Nixon Road","rawArea":"Rodney","n":66,"lat":-36.99307,"lng":174.7898},{"road":"Forest Hill Road","rawArea":"Waitakere","n":66,"lat":-36.89712,"lng":174.61873},{"road":"Hepburn Road","rawArea":"Whau","n":65,"lat":-36.88985,"lng":174.65687},{"road":"Wharehine Road","rawArea":"Rodney","n":64,"lat":-36.34624,"lng":174.4285},{"road":"Great North Road","rawArea":"Whau","n":64,"lat":-36.86795,"lng":174.72806},{"road":"Remuera Road","rawArea":"Orakei","n":63,"lat":-36.8777,"lng":174.82413},{"road":"Lincoln Road","rawArea":"Waitakere","n":63,"lat":-36.86189,"lng":174.62938},{"road":"Harris Street","rawArea":"Franklin","n":62,"lat":-37.20354,"lng":174.90845},{"road":"Logan Road","rawArea":"Franklin","n":62,"lat":-37.22472,"lng":174.93064},{"road":"South Head Road","rawArea":"Rodney","n":62,"lat":-36.57793,"lng":174.32602},{"road":"Alfriston Road (Ardmore)","rawArea":"Franklin","n":61,"lat":-37.02455,"lng":174.97934},{"road":"Pakiri Road","rawArea":"Rodney","n":61,"lat":-36.28796,"lng":174.79708},{"road":"Old North Road","rawArea":"Rodney","n":61,"lat":-36.7778,"lng":174.57748},{"road":"Glenbrook Road","rawArea":"Franklin","n":60,"lat":-37.14101,"lng":174.87945},{"road":"Glass Road","rawArea":"Albert-Eden-Puketapapa","n":60,"lat":-36.91248,"lng":174.75087},{"road":"Te Atatu Road","rawArea":"Waitakere","n":60,"lat":-36.87855,"lng":174.64652},{"road":"Matakana Road","rawArea":"Rodney","n":59,"lat":-36.35916,"lng":174.7104},{"road":"Maraetai Drive","rawArea":"Franklin","n":58,"lat":-36.88018,"lng":175.03379},{"road":"Peak Road","rawArea":"Rodney","n":58,"lat":-36.69053,"lng":174.5149},{"road":"Paparata Road","rawArea":"Franklin","n":57,"lat":-37.17873,"lng":175.02317},{"road":"Waitoki Road","rawArea":"Rodney","n":57,"lat":-36.63348,"lng":174.55204},{"road":"Whangaparaoa Road","rawArea":"Albany","n":56,"lat":-36.61475,"lng":174.71318},{"road":"Hepburn Creek Road","rawArea":"Rodney","n":56,"lat":-36.42588,"lng":174.68639},{"road":"Konini Road","rawArea":"Waitakere","n":56,"lat":-36.93203,"lng":174.64143},{"road":"Wellsford Valley Road","rawArea":"Rodney","n":55,"lat":-36.28208,"lng":174.50923},{"road":"Glenbrook Beach Road","rawArea":"Franklin","n":54,"lat":-37.18253,"lng":174.73115},{"road":"Hunua Road","rawArea":"Franklin","n":54,"lat":-37.08074,"lng":175.07184},{"road":"Woodhouse Road","rawArea":"Franklin","n":54,"lat":-37.177,"lng":174.83901},{"road":"Whakapirau Road","rawArea":"Rodney","n":54,"lat":-36.25667,"lng":174.50784},{"road":"Seymour Road","rawArea":"Waitakere","n":54,"lat":-36.89798,"lng":174.63257},{"road":"Waitakere Road","rawArea":"Rodney","n":53,"lat":-36.81931,"lng":174.54566},{"road":"Fred Taylor Drive","rawArea":"Waitakere","n":53,"lat":-36.80061,"lng":174.59648},{"road":"Glenbrook-Waiuku Road","rawArea":"Franklin","n":52,"lat":-37.23457,"lng":174.75037},{"road":"Blackbridge Road","rawArea":"Rodney","n":52,"lat":-36.67732,"lng":174.63208},{"road":"Queen Street","rawArea":"North Shore","n":51,"lat":-36.84575,"lng":174.76625},{"road":"Dominion Road","rawArea":"Albert-Eden-Puketapapa","n":51,"lat":-36.88871,"lng":174.74691},{"road":"Great North Road","rawArea":"Waitemata And Gulf","n":51,"lat":-36.86795,"lng":174.72806},{"road":"North Road","rawArea":"Franklin","n":50,"lat":-36.94272,"lng":175.06521},{"road":"Whitehills Road","rawArea":"Rodney","n":50,"lat":-36.62582,"lng":174.58557},{"road":"Bethells Road","rawArea":"Waitakere","n":50,"lat":-36.85972,"lng":174.52102},{"road":"Sunnyvale Road","rawArea":"Waitakere","n":50,"lat":-36.84832,"lng":174.57475},{"road":"Burtt Road","rawArea":"Franklin","n":49,"lat":-37.16373,"lng":174.91408},{"road":"Fitzgerald Road","rawArea":"Franklin","n":48,"lat":-37.12425,"lng":174.97495},{"road":"Mangawhai Road","rawArea":"Rodney","n":48,"lat":-36.16881,"lng":174.58115},{"road":"Inland Road","rawArea":"Rodney","n":48,"lat":-36.46954,"lng":174.20021},{"road":"Henderson Valley Road","rawArea":"Waitakere","n":48,"lat":-36.88594,"lng":174.62841},{"road":"Trig Hill Road","rawArea":"Waitemata And Gulf","n":47,"lat":-36.79704,"lng":175.08338},{"road":"Beach Haven Road","rawArea":"North Shore","n":47,"lat":-36.79389,"lng":174.6903},{"road":"Ostrich Road","rawArea":"Franklin","n":46,"lat":-37.1629,"lng":174.8571},{"road":"Wellesley Street West","rawArea":"Waitemata And Gulf","n":46,"lat":-36.85059,"lng":174.76345},{"road":"Birdwood Road","rawArea":"Waitakere","n":46,"lat":-36.85591,"lng":174.59741},{"road":"Airpark Drive","rawArea":"Manukau","n":45,"lat":-36.98611,"lng":174.78344},{"road":"Wilson Road","rawArea":"Rodney","n":45,"lat":-36.91206,"lng":174.65301},{"road":"Takatu Road","rawArea":"Rodney","n":45,"lat":-36.35787,"lng":174.74671},{"road":"Pilkington Road","rawArea":"Maungakiekie-Tamaki","n":45,"lat":-36.89267,"lng":174.856},{"road":"Manukau Road","rawArea":"Franklin","n":44,"lat":-37.21108,"lng":174.91041},{"road":"Tourist Road","rawArea":"Franklin","n":44,"lat":-37.01291,"lng":175.05339},{"road":"Linwood Road","rawArea":"Franklin","n":44,"lat":-37.10083,"lng":174.8623},{"road":"Flat Bush School Road","rawArea":"Howick","n":44,"lat":-36.97647,"lng":174.9301},{"road":"Postman Road","rawArea":"Rodney","n":44,"lat":-36.65825,"lng":174.65213},{"road":"Victoria Street","rawArea":"Maungakiekie-Tamaki","n":44,"lat":-36.92704,"lng":174.79255},{"road":"Kawakawa-Orere Road","rawArea":"Franklin","n":43,"lat":-36.97973,"lng":175.17818},{"road":"Great South Road","rawArea":"Manurewa-Papakura","n":43,"lat":-36.98682,"lng":174.8814},{"road":"Okura River Road","rawArea":"Albany","n":43,"lat":-36.67534,"lng":174.71974},{"road":"Vaughans Road","rawArea":"Albany","n":43,"lat":-36.68519,"lng":174.72766},{"road":"Atkinson Road","rawArea":"Waitakere","n":43,"lat":-36.93812,"lng":174.65405},{"road":"Maraetai Coast Road","rawArea":"Franklin","n":42,"lat":-36.88241,"lng":175.05315},{"road":"Heights Road","rawArea":"Franklin","n":42,"lat":-37.18089,"lng":174.89049},{"road":"Helvetia Road","rawArea":"Franklin","n":42,"lat":-37.20023,"lng":174.89255},{"road":"Kahikatea Flat Road","rawArea":"Rodney","n":42,"lat":-36.63733,"lng":174.55631},{"road":"Grafton Road","rawArea":"Waitemata And Gulf","n":42,"lat":-36.86013,"lng":174.76717},{"road":"Papakura/Clevedon Road","rawArea":"Franklin","n":41,"lat":-37.00034,"lng":175.03021},{"road":"Alfriston-Ardmore Road","rawArea":"Franklin","n":41,"lat":-37.02455,"lng":174.97934},{"road":"Roscommon Road","rawArea":"Manurewa-Papakura","n":41,"lat":-37.00466,"lng":174.85453},{"road":"Old Kaipara Road","rawArea":"Rodney","n":41,"lat":-36.41684,"lng":174.54999},{"road":"Sandspit Road","rawArea":"Rodney","n":41,"lat":-36.3918,"lng":174.72856},{"road":"Haruru Road","rawArea":"Rodney","n":41,"lat":-36.55892,"lng":174.52101},{"road":"Hillsborough Road","rawArea":"Albert-Eden-Puketapapa","n":41,"lat":-36.92757,"lng":174.74904},{"road":"Scenic Drive","rawArea":"Waitakere","n":41,"lat":-36.93845,"lng":174.65394},{"road":"West Coast Road","rawArea":"Rodney","n":40,"lat":-36.90854,"lng":174.66368},{"road":"Tomarata Valley Road","rawArea":"Rodney","n":40,"lat":-36.26519,"lng":174.58602},{"road":"Pukekohe East Road","rawArea":"Franklin","n":39,"lat":-37.1966,"lng":174.94247},{"road":"Lake Road","rawArea":"North Shore","n":39,"lat":-36.8198,"lng":174.7959},{"road":"Dominion Road Ext","rawArea":"Albert-Eden-Puketapapa","n":39,"lat":-36.92088,"lng":174.736},{"road":"Wairere Road","rawArea":"Waitakere","n":39,"lat":-36.85024,"lng":174.51248},{"road":"Waimumu Road","rawArea":"Waitakere","n":39,"lat":-36.84463,"lng":174.60945},{"road":"East Street","rawArea":"Franklin","n":38,"lat":-37.19926,"lng":174.91057},{"road":"Waiau Pa Road","rawArea":"Franklin","n":38,"lat":-37.14928,"lng":174.78045},{"road":"Kitchener Road","rawArea":"Franklin","n":38,"lat":-37.24865,"lng":174.73331},{"road":"Sunnyside Road","rawArea":"Rodney","n":38,"lat":-36.71285,"lng":174.62695},{"road":"Sandstone Road","rawArea":"Franklin","n":37,"lat":-36.95491,"lng":174.95655},{"road":"Trig Road","rawArea":"Albany","n":37,"lat":-36.80864,"lng":174.61855},{"road":"Beach Road","rawArea":"Albany","n":37,"lat":-36.73794,"lng":174.75301},{"road":"Glenvar Road","rawArea":"Albany","n":37,"lat":-36.69452,"lng":174.7418},{"road":"Ti Point Road","rawArea":"Rodney","n":37,"lat":-36.31073,"lng":174.79145},{"road":"Monument Road","rawArea":"Franklin","n":36,"lat":-37.02942,"lng":175.05079},{"road":"Twilight Road","rawArea":"Franklin","n":36,"lat":-36.9889,"lng":175.02674},{"road":"John Street","rawArea":"Franklin","n":36,"lat":-37.20622,"lng":174.90424},{"road":"Drury Hills Road","rawArea":"Franklin","n":36,"lat":-37.11252,"lng":174.97954},{"road":"Dairy Flat Highway","rawArea":"Rodney","n":36,"lat":-36.70519,"lng":174.66537},{"road":"Great North Road","rawArea":"Waitakere","n":36,"lat":-36.90342,"lng":174.65741},{"road":"Runciman Road","rawArea":"Franklin","n":35,"lat":-37.16213,"lng":174.94298},{"road":"Onewa Road","rawArea":"North Shore","n":35,"lat":-36.81181,"lng":174.7461},{"road":"Birkenhead Avenue","rawArea":"North Shore","n":35,"lat":-36.81156,"lng":174.72604},{"road":"Ireland Road","rawArea":"Rodney","n":35,"lat":-36.90915,"lng":174.84243},{"road":"Kaipara Flats Road","rawArea":"Rodney","n":35,"lat":-36.40762,"lng":174.54412},{"road":"Anderson Road","rawArea":"Rodney","n":35,"lat":-36.36705,"lng":174.67774},{"road":"Hillview Road","rawArea":"Franklin","n":34,"lat":-37.15896,"lng":174.98174},{"road":"O'Brien Road","rawArea":"Waitemata And Gulf","n":34,"lat":-36.81919,"lng":175.05814},{"road":"Duck Creek Road","rawArea":"Albany","n":34,"lat":-36.63368,"lng":174.70934},{"road":"Target Street","rawArea":"Albert-Eden-Puketapapa","n":34,"lat":-36.86353,"lng":174.7029},{"road":"Swanson Road","rawArea":"Waitakere","n":34,"lat":-36.87072,"lng":174.61984},{"road":"Clevedon-Takanini Road","rawArea":"Franklin","n":33,"lat":-37.02317,"lng":174.97872},{"road":"Hudson Road","rawArea":"Rodney","n":33,"lat":-36.39188,"lng":174.65101},{"road":"Burnside Road","rawArea":"Rodney","n":33,"lat":-36.5284,"lng":174.5063},{"road":"Onehunga Mall","rawArea":"Maungakiekie-Tamaki","n":33,"lat":-36.92307,"lng":174.78541},{"road":"Richardson Road","rawArea":"Albert-Eden-Puketapapa","n":33,"lat":-36.91271,"lng":174.72804},{"road":"South Titirangi Road","rawArea":"Waitakere","n":33,"lat":-36.94527,"lng":174.65443},{"road":"Mclaughlins Road","rawArea":"Manurewa-Papakura","n":32,"lat":-37.01391,"lng":174.84377},{"road":"Small Road","rawArea":"Albany","n":32,"lat":-36.62526,"lng":174.66787},{"road":"Horseshoe Bush Road","rawArea":"Rodney","n":32,"lat":-36.658,"lng":174.59508},{"road":"Kennedy Road","rawArea":"Rodney","n":32,"lat":-36.683,"lng":174.65537},{"road":"Ocean View Road","rawArea":"Waitemata And Gulf","n":31,"lat":-36.78224,"lng":175.0024},{"road":"Cowan Bay Road","rawArea":"Rodney","n":31,"lat":-36.46223,"lng":174.65297},{"road":"Staniforth Road","rawArea":"Rodney","n":31,"lat":-36.18134,"lng":174.56871},{"road":"Union Road","rawArea":"Franklin","n":30,"lat":-37.20371,"lng":174.81806},{"road":"Porchester Road","rawArea":"Manurewa-Papakura","n":30,"lat":-37.02578,"lng":174.92422},{"road":"Ihumatao Road","rawArea":"Manukau","n":30,"lat":-36.98946,"lng":174.74953},{"road":"Tender Road","rawArea":"Rodney","n":30,"lat":-36.66094,"lng":174.6124},{"road":"West Tamaki Road","rawArea":"Maungakiekie-Tamaki","n":30,"lat":-36.86939,"lng":174.87351},{"road":"May Road","rawArea":"Albert-Eden-Puketapapa","n":30,"lat":-36.90412,"lng":174.73926},{"road":"Tirimoana Road","rawArea":"Waitakere","n":30,"lat":-36.88534,"lng":174.64517},{"road":"Great South Road","rawArea":"Franklin","n":29,"lat":-37.16086,"lng":174.96475},{"road":"Ness Valley Road","rawArea":"Franklin","n":29,"lat":-36.99701,"lng":175.13414},{"road":"Walters Road","rawArea":"Manurewa-Papakura","n":29,"lat":-37.04365,"lng":174.94981},{"road":"Wallace Road","rawArea":"Manukau","n":29,"lat":-36.95699,"lng":174.78319},{"road":"Orapiu Road","rawArea":"Waitemata And Gulf","n":29,"lat":-36.82285,"lng":175.13485},{"road":"Goatley Road","rawArea":"Rodney","n":29,"lat":-36.37763,"lng":174.64818},{"road":"Cames Road","rawArea":"Rodney","n":29,"lat":-36.17094,"lng":174.56247},{"road":"Jones Road","rawArea":"Rodney","n":29,"lat":-36.71031,"lng":174.57744},{"road":"Mt Wellington Highway","rawArea":"Maungakiekie-Tamaki","n":29,"lat":-36.90283,"lng":174.84217},{"road":"Matipo Road","rawArea":"Waitakere","n":29,"lat":-36.83689,"lng":174.64226},{"road":"Wharf Road","rawArea":"Waitakere","n":29,"lat":-37.01187,"lng":174.60671},{"road":"Opaheke Road (Opaheke)","rawArea":"Franklin","n":28,"lat":-37.09347,"lng":174.94588},{"road":"Paerata Road","rawArea":"Franklin","n":28,"lat":-37.1661,"lng":174.8946},{"road":"Takanini School Road","rawArea":"Manurewa-Papakura","n":28,"lat":-37.02968,"lng":174.91997},{"road":"Ridge Road","rawArea":"Rodney","n":28,"lat":-36.46413,"lng":174.73489},{"road":"Moir Hill Road","rawArea":"Rodney","n":28,"lat":-36.47296,"lng":174.63447},{"road":"Tamaki Drive","rawArea":"Orakei","n":28,"lat":-36.85089,"lng":174.85567},{"road":"Tuarangi Road","rawArea":"Waitemata And Gulf","n":28,"lat":-36.86663,"lng":174.73165},{"road":"Avonleigh Road","rawArea":"Whau","n":28,"lat":-36.93162,"lng":174.67503},{"road":"Chapel Road","rawArea":"Howick","n":27,"lat":-36.92226,"lng":174.92319},{"road":"Rangatira Road","rawArea":"North Shore","n":27,"lat":-36.79514,"lng":174.68917},{"road":"Old Railway Road","rawArea":"Rodney","n":27,"lat":-36.77786,"lng":174.57007},{"road":"Old Woodcocks Road","rawArea":"Rodney","n":27,"lat":-36.43396,"lng":174.55665},{"road":"Fordyce Road","rawArea":"Rodney","n":27,"lat":-36.66932,"lng":174.40842},{"road":"Wishart Road","rawArea":"Rodney","n":27,"lat":-36.69612,"lng":174.46381},{"road":"Awaroa Road","rawArea":"Waitakere","n":27,"lat":-36.8954,"lng":174.6398},{"road":"Christian Road","rawArea":"Waitakere","n":27,"lat":-36.881,"lng":174.56804},{"road":"Jesmond Road","rawArea":"Franklin","n":26,"lat":-37.11366,"lng":174.93314},{"road":"Clarks Beach Road","rawArea":"Franklin","n":26,"lat":-37.13579,"lng":174.75111},{"road":"Gun Club Road","rawArea":"Franklin","n":26,"lat":-37.19415,"lng":174.86786},{"road":"Glasgow Road","rawArea":"Franklin","n":26,"lat":-37.20772,"lng":174.90699},{"road":"Rapson Road","rawArea":"Rodney","n":26,"lat":-36.62141,"lng":174.54395},{"road":"Bawden Road","rawArea":"Rodney","n":26,"lat":-36.68102,"lng":174.65333},{"road":"Green Lane West","rawArea":"Albert-Eden-Puketapapa","n":26,"lat":-36.89295,"lng":174.78484},{"road":"Holdens Road","rawArea":"Waitakere","n":26,"lat":-36.90478,"lng":174.61639},{"road":"Laingholm Drive","rawArea":"Waitakere","n":26,"lat":-36.9609,"lng":174.64159},{"road":"Anawhata Road","rawArea":"Waitakere","n":26,"lat":-36.92874,"lng":174.46069},{"road":"Kemp Road","rawArea":"Franklin","n":25,"lat":-37.10196,"lng":174.59969},{"road":"Totara Road","rawArea":"Franklin","n":25,"lat":-36.77677,"lng":174.62526},{"road":"Coulter Road","rawArea":"Waitakere","n":25,"lat":-36.88735,"lng":174.57904},{"road":"Blockhouse Bay Road","rawArea":"Whau","n":25,"lat":-36.92016,"lng":174.70209},{"road":"Ara-Kotinga","rawArea":"Franklin","n":24,"lat":-36.9639,"lng":175.00421},{"road":"Shoal Bay Road","rawArea":"Waitemata And Gulf","n":24,"lat":-36.32125,"lng":175.48595},{"road":"Ostend Road","rawArea":"Waitemata And Gulf","n":24,"lat":-36.79563,"lng":175.0508},{"road":"Brigham Creek Road","rawArea":"Albany","n":24,"lat":-36.79983,"lng":174.6416},{"road":"Ocean View Road","rawArea":"Rodney","n":24,"lat":-36.80097,"lng":174.73663},{"road":"Green Road","rawArea":"Rodney","n":24,"lat":-36.67868,"lng":174.6449},{"road":"Monowai Road","rawArea":"Rodney","n":24,"lat":-36.58534,"lng":174.58905},{"road":"Austin Road","rawArea":"Rodney","n":24,"lat":-36.77987,"lng":174.67049},{"road":"Hamilton Road","rawArea":"Rodney","n":24,"lat":-36.41229,"lng":174.70552},{"road":"Weranui Road","rawArea":"Rodney","n":24,"lat":-36.56922,"lng":174.64773},{"road":"Stoney Creek Road","rawArea":"Rodney","n":24,"lat":-36.61326,"lng":174.51554},{"road":"New North Road","rawArea":"Albert-Eden-Puketapapa","n":24,"lat":-36.88218,"lng":174.71884},{"road":"Symonds Street","rawArea":"Waitemata And Gulf","n":24,"lat":-36.85379,"lng":174.76846},{"road":"Stewart Road","rawArea":"Albert-Eden-Puketapapa","n":24,"lat":-36.89467,"lng":174.71194},{"road":"Candia Road","rawArea":"Waitakere","n":24,"lat":-36.89591,"lng":174.59566},{"road":"Phillip Road","rawArea":"Franklin","n":23,"lat":-37.02121,"lng":174.9549},{"road":"East Coast Road","rawArea":"Franklin","n":23,"lat":-37.01581,"lng":175.28876},{"road":"Blackbridge Road","rawArea":"Franklin","n":23,"lat":-37.11186,"lng":174.89154},{"road":"Ellett Road","rawArea":"Franklin","n":23,"lat":-37.09843,"lng":174.81409},{"road":"Harrington Avenue","rawArea":"Franklin","n":23,"lat":-37.20016,"lng":174.90015},{"road":"Subway Road","rawArea":"Franklin","n":23,"lat":-37.20658,"lng":174.91388},{"road":"White Road","rawArea":"Franklin","n":23,"lat":-37.06532,"lng":175.06918},{"road":"Pitt Road","rawArea":"Franklin","n":23,"lat":-37.11469,"lng":174.94509},{"road":"Mill Road","rawArea":"Manurewa-Papakura","n":23,"lat":-37.19216,"lng":174.98383},{"road":"Clevedon Road","rawArea":"Manurewa-Papakura","n":23,"lat":-37.06215,"lng":174.94819},{"road":"Pakuranga Road","rawArea":"Howick","n":23,"lat":-36.90916,"lng":174.88203},{"road":"Popes Road","rawArea":"Manurewa-Papakura","n":23,"lat":-37.03113,"lng":174.92366},{"road":"Tahekeroa Road","rawArea":"Rodney","n":23,"lat":-36.55744,"lng":174.52089},{"road":"Taha Road","rawArea":"Rodney","n":23,"lat":-36.78149,"lng":174.47338},{"road":"Queen Street","rawArea":"Waitemata And Gulf","n":23,"lat":-36.84393,"lng":174.767},{"road":"Lunn Avenue","rawArea":"Maungakiekie-Tamaki","n":23,"lat":-36.89637,"lng":174.84134},{"road":"Shaw Road","rawArea":"Waitakere","n":23,"lat":-36.92107,"lng":174.62398},{"road":"Spedding Road","rawArea":"Albany","n":22,"lat":-36.80336,"lng":174.61608},{"road":"Bayswater Avenue","rawArea":"North Shore","n":22,"lat":-36.80988,"lng":174.78863},{"road":"Mokoia Road","rawArea":"North Shore","n":22,"lat":-36.81086,"lng":174.71088},{"road":"Taupaki Road","rawArea":"Rodney","n":22,"lat":-36.79377,"lng":174.57412},{"road":"Leigh Road","rawArea":"Rodney","n":22,"lat":-36.29796,"lng":174.79502},{"road":"Pukapuka Road","rawArea":"Rodney","n":22,"lat":-36.48362,"lng":174.68257},{"road":"Mckinney Road","rawArea":"Rodney","n":22,"lat":-36.41318,"lng":174.66335},{"road":"Lower Domain Drive","rawArea":"Waitemata And Gulf","n":22,"lat":-36.85448,"lng":174.77207},{"road":"Surrey Crescent","rawArea":"Waitemata And Gulf","n":22,"lat":-36.86308,"lng":174.73642},{"road":"Victory Road","rawArea":"Waitakere","n":22,"lat":-36.96054,"lng":174.62534},{"road":"Mountain Road","rawArea":"Waitakere","n":22,"lat":-36.95693,"lng":174.78438},{"road":"Pinnacle Hill Road","rawArea":"Franklin","n":21,"lat":-37.18666,"lng":175.0452},{"road":"Kitchener Road","rawArea":"Franklin","n":21,"lat":-37.21566,"lng":174.90905},{"road":"Ingram Road","rawArea":"Franklin","n":21,"lat":-37.17449,"lng":174.96428},{"road":"Paparimu Road","rawArea":"Franklin","n":21,"lat":-37.15397,"lng":175.12092},{"road":"Wharf Road","rawArea":"Waitemata And Gulf","n":21,"lat":-36.79249,"lng":175.04691},{"road":"Ngataringa Road","rawArea":"North Shore","n":21,"lat":-36.81601,"lng":174.79347},{"road":"Gills Road","rawArea":"Albany","n":21,"lat":-36.72266,"lng":174.69867},{"road":"Pebble Brook Road","rawArea":"Rodney","n":21,"lat":-36.61094,"lng":174.58079},{"road":"Rimmer Road","rawArea":"Rodney","n":21,"lat":-36.69444,"lng":174.36833},{"road":"Forestry Road","rawArea":"Rodney","n":21,"lat":-36.7595,"lng":174.5755},{"road":"Silver Hill Road","rawArea":"Rodney","n":21,"lat":-36.25797,"lng":174.51043},{"road":"White Swan Road","rawArea":"Albert-Eden-Puketapapa","n":21,"lat":-36.91922,"lng":174.7201},{"road":"Wagener Place","rawArea":"Albert-Eden-Puketapapa","n":21,"lat":-36.88361,"lng":174.73248},{"road":"Mcentee Road","rawArea":"Waitakere","n":21,"lat":-36.85521,"lng":174.56254},{"road":"Portage Road","rawArea":"Whau","n":21,"lat":-36.98195,"lng":174.82949},{"road":"Taikata Road","rawArea":"Waitakere","n":21,"lat":-36.84165,"lng":174.64894},{"road":"Creightons Road","rawArea":"Franklin","n":20,"lat":-37.0432,"lng":175.02173},{"road":"Kawakawa Bay Coast Road","rawArea":"Franklin","n":20,"lat":-36.94781,"lng":175.17009},{"road":"Hyde Road","rawArea":"Franklin","n":20,"lat":-36.99696,"lng":175.0365},{"road":"Wright Road","rawArea":"Franklin","n":20,"lat":-37.11421,"lng":174.77658},{"road":"Spartan Road","rawArea":"Manurewa-Papakura","n":20,"lat":-37.0349,"lng":174.91706},{"road":"Opaheke Road","rawArea":"Manurewa-Papakura","n":20,"lat":-37.08152,"lng":174.95274},{"road":"Point View Drive","rawArea":"Howick","n":20,"lat":-36.94489,"lng":174.91626},{"road":"Cosgrave Road","rawArea":"Manurewa-Papakura","n":20,"lat":-37.04367,"lng":174.95285},{"road":"Aotea Road","rawArea":"Waitemata And Gulf","n":20,"lat":-36.15803,"lng":175.37644},{"road":"Millwater Parkway","rawArea":"Albany","n":20,"lat":-36.61322,"lng":174.68501},{"road":"Attwood Road","rawArea":"Albany","n":20,"lat":-36.76974,"lng":174.65532},{"road":"Elizabeth Street","rawArea":"Rodney","n":20,"lat":-36.39764,"lng":174.66187},{"road":"Falls Road","rawArea":"Rodney","n":20,"lat":-36.40689,"lng":174.63966},{"road":"Richardson Road","rawArea":"Albert-Eden-Puketapapa","n":20,"lat":-36.89169,"lng":174.71279},{"road":"Commodore Drive","rawArea":"Albert-Eden-Puketapapa","n":20,"lat":-36.92709,"lng":174.71944},{"road":"Fanshawe Street","rawArea":"Waitemata And Gulf","n":20,"lat":-36.84459,"lng":174.76283},{"road":"Red Hills Road 2","rawArea":"Rodney","n":20,"lat":-36.83714,"lng":174.60078},{"road":"Park Road","rawArea":"Waitakere","n":20,"lat":-36.93809,"lng":174.66119},{"road":"Moire Road","rawArea":"Waitakere","n":20,"lat":-36.81888,"lng":174.62951}],"monthly":[{"ym":"2024-01","n":833},{"ym":"2024-02","n":719},{"ym":"2024-03","n":750},{"ym":"2024-04","n":714},{"ym":"2024-05","n":832},{"ym":"2024-06","n":784},{"ym":"2024-07","n":1414},{"ym":"2024-08","n":1476},{"ym":"2024-09","n":1144},{"ym":"2024-10","n":1120},{"ym":"2024-11","n":1078},{"ym":"2024-12","n":579},{"ym":"2025-01","n":642},{"ym":"2025-02","n":415},{"ym":"2025-03","n":405},{"ym":"2025-04","n":543},{"ym":"2025-05","n":885},{"ym":"2025-06","n":1197},{"ym":"2025-07","n":2029},{"ym":"2025-08","n":1343},{"ym":"2025-09","n":1218},{"ym":"2025-10","n":1149},{"ym":"2025-11","n":806},{"ym":"2025-12","n":537},{"ym":"2026-01","n":732},{"ym":"2026-02","n":698},{"ym":"2026-03","n":570},{"ym":"2026-04","n":671},{"ym":"2026-05","n":575},{"ym":"2026-06","n":55}]};
 
-// === Map ===
-const map = L.map('map', { scrollWheelZoom: false }).setView([-36.875, 174.78], 11);
+// ---- headline stats ----
+const fmt = n => n.toLocaleString('en-NZ');
+document.getElementById('stTotal').textContent = fmt(D.stats.total);
+document.getElementById('stBinned').textContent = D.stats.publicBinnedPct + '%';
+document.getElementById('stTarget').textContent = D.stats.onTargetPct + '%';
+document.getElementById('stSpend').textContent = '$' + (D.stats.spend / 1e6).toFixed(2) + 'M';
+const covTxt = 'Dots cover the ' + fmt(D.meta.geocoded) + ' busiest roads — ' + D.meta.coveredPct + '% of all dispatches.';
+document.getElementById('covNote').textContent = covTxt;
+document.getElementById('covNote2').textContent = D.meta.coveredPct + '%';
+
+// ---- map: whole AT network ----
+const map = L.map('map', { scrollWheelZoom: false }).setView([-36.86, 174.86], 9);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OSM contributors',
-  maxZoom: 18,
+  attribution: '&copy; OSM contributors', maxZoom: 18,
 }).addTo(map);
-
-if (window.AT_INDEX_DATA && window.AT_INDEX_DATA.holes) {
-  window.AT_INDEX_DATA.holes.forEach(h => {
-    const color = h.compliance === 'on_time' ? '#2da14b' : h.compliance === 'late' ? '#FF9D2E' : '#c43c2c';
-    const m = L.circleMarker([h.lat, h.lng], {
-      radius: 5, color: '#fff', weight: 1.5, fillColor: color, fillOpacity: 0.85
-    }).addTo(map);
-    m.bindPopup(`<strong>${h.suburb}</strong><br>Reported: ${h.reported}<br>Repaired: ${h.repaired || '<em>still open</em>'}<br>Response: ${h.responseHours}h`);
-  });
-}
+const maxN = Math.max(...D.roads.map(r => r.n));
+L.heatLayer(D.roads.map(r => [r.lat, r.lng, Math.sqrt(r.n / maxN)]), {
+  radius: 26, blur: 20, maxZoom: 13,
+  gradient: { 0.3: '#FFD89A', 0.5: '#FF9D2E', 0.7: '#FF6B00', 1: '#C04400' }
+}).addTo(map);
+D.roads.forEach(r => {
+  const rad = 4 + 14 * Math.sqrt(r.n / maxN);
+  L.circleMarker([r.lat, r.lng], {
+    radius: rad, color: '#fff', weight: 1.5, fillColor: '#FF9D2E', fillOpacity: .82
+  }).addTo(map).bindPopup(
+    '<strong>' + r.road + '</strong><br>' + r.rawArea +
+    '<br><strong>' + fmt(r.n) + '</strong> pothole dispatches in 29 months');
+});
+map.fitBounds(L.latLngBounds(D.roads.map(r => [r.lat, r.lng])).pad(0.06));
 map.on('click', () => map.scrollWheelZoom.enable());
 map.on('mouseout', () => map.scrollWheelZoom.disable());
+
+// ---- league table ----
+const gCls = g => g === 'A' ? 'gA' : g === 'A-' ? 'gB' : g === 'C' ? 'gC' : g === 'D' ? 'gD' : g === 'F' ? 'gF' : 'gN';
+const bCls = p => p === null ? '' : p < 30 ? 'low' : p < 50 ? 'med' : 'high';
+document.getElementById('leagueTable').innerHTML = D.areas.map(a => `<tr>
+  <td><strong>${a.area}</strong><span class="boards">${a.boards}</span></td>
+  <td class="num">${fmt(a.n)}</td>
+  <td class="num">${a.publicBinnedPct === null ? '–' : '<span class="binned ' + bCls(a.publicBinnedPct) + '">' + a.publicBinnedPct + '%</span>'}</td>
+  <td class="num">${a.onTargetPct === null ? '–' : a.onTargetPct + '%'}</td>
+  <td class="num">${a.p90h === null ? '–' : a.p90h < 48 ? a.p90h + ' h' : (a.p90h / 24).toFixed(1) + ' days'}</td>
+  <td class="num">$${(a.spend / 1000).toFixed(0)}k</td>
+  <td><span class="grade ${gCls(a.grade)}">${a.grade}</span></td>
+</tr>`).join('');
+
+// ---- top roads table ----
+const DAYS = 884; // 1 Jan 2024 – 3 Jun 2026
+document.getElementById('roadsTable').innerHTML = D.roads.slice()
+  .sort((x, y) => y.n - x.n).slice(0, 15).map((r, i) => `<tr>
+  <td>${i + 1}</td>
+  <td><strong>${r.road}</strong></td>
+  <td>${r.rawArea}</td>
+  <td class="num">${fmt(r.n)}</td>
+  <td class="num">${(DAYS / r.n).toFixed(1)} days</td>
+</tr>`).join('');
+
+// ---- monthly trend (inline SVG bars) ----
+(function () {
+  const M = D.monthly.filter(m => m.ym < '2026-06');
+  const W = 1040, H = 300, P = { l: 44, r: 8, t: 16, b: 42 };
+  const bw = (W - P.l - P.r) / M.length;
+  const mx = Math.max(...M.map(m => m.n));
+  const y = v => P.t + (H - P.t - P.b) * (1 - v / mx);
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Monthly pothole dispatches">';
+  [0, 500, 1000, 1500, 2000].forEach(v => {
+    if (v > mx) return;
+    s += '<line x1="' + P.l + '" x2="' + (W - P.r) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#e4e1d6" stroke-width="1"/>';
+    s += '<text x="' + (P.l - 7) + '" y="' + (y(v) + 4) + '" font-size="11" fill="#999" text-anchor="end">' + (v >= 1000 ? (v / 1000) + 'k' : v) + '</text>';
+  });
+  M.forEach((m, i) => {
+    const [yy, mm] = m.ym.split('-').map(Number);
+    const winter = mm >= 6 && mm <= 9;
+    const x = P.l + i * bw;
+    s += '<rect x="' + (x + 1) + '" y="' + y(m.n) + '" width="' + (bw - 2) + '" height="' + (H - P.b - y(m.n)) + '" rx="2" fill="' + (winter ? '#FF9D2E' : '#0F2540') + '" opacity="' + (winter ? '1' : '.55') + '"><title>' + m.ym + ': ' + m.n + '</title></rect>';
+    if (mm === 1) s += '<text x="' + (x + bw / 2) + '" y="' + (H - P.b + 16) + '" font-size="11" fill="#666" text-anchor="middle">' + yy + '</text>';
+    if (m.n === mx) s += '<text x="' + (x + bw / 2) + '" y="' + (y(m.n) - 6) + '" font-size="11" font-weight="700" fill="#C04400" text-anchor="middle">' + m.ym + ' · ' + fmt(m.n) + '</text>';
+  });
+  s += '<rect x="' + P.l + '" y="' + (H - 14) + '" width="10" height="10" fill="#FF9D2E"/><text x="' + (P.l + 16) + '" y="' + (H - 5) + '" font-size="11" fill="#666">Jun–Sep (winter)</text>';
+  s += '<rect x="' + (P.l + 130) + '" y="' + (H - 14) + '" width="10" height="10" fill="#0F2540" opacity=".55"/><text x="' + (P.l + 146) + '" y="' + (H - 5) + '" font-size="11" fill="#666">Oct–May</text>';
+  s += '</svg>';
+  document.getElementById('trendBox').innerHTML = s;
+})();
 </script>
 </body>
 </html>
