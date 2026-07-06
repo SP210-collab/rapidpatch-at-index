@@ -97,8 +97,17 @@
         }).addTo(map).bindPopup('<strong>' + r.road + '</strong><br>' + r.rawArea +
           '<br><strong>' + fmt(r.n) + '</strong> pothole dispatches in 29 months');
       });
-      map.fitBounds(L.latLngBounds(D.roads.map(function (r) { return [r.lat, r.lng]; })).pad(0.05));
-      if (!(opts && opts.big)) map.setZoom(map.getZoom() + 3); // home teaser: 3 levels tighter than fitBounds (metro, not upper North Island)
+      var bounds = L.latLngBounds(D.roads.map(function (r) { return [r.lat, r.lng]; })).pad(0.05);
+      map.fitBounds(bounds);
+      if (!(opts && opts.big)) {
+        // home teaser: 3 levels tighter than fitBounds (metro, not upper North Island).
+        // invalidateSize + setView (not bare setZoom) or the tile grid keeps the old
+        // zoom's coverage and leaves unrequested black tiles.
+        setTimeout(function () {
+          map.invalidateSize();
+          map.setView(bounds.getCenter(), map.getBoundsZoom(bounds) + 3, { animate: false });
+        }, 150);
+      }
       map.on('click', function () { map.scrollWheelZoom.enable(); });
       map.on('mouseout', function () { map.scrollWheelZoom.disable(); });
       mapBooted = true; mapBooting = false;
