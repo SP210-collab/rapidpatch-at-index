@@ -35,6 +35,15 @@
       document.head.appendChild(sc);
     });
   }
+  // Wix loads requirejs-bolt: once define.amd exists, Leaflet's UMD registers as an anonymous
+  // AMD module instead of setting window.L (then L.map throws). Click-timing race: early tap
+  // beats requirejs and works, late tap loses. Mask define.amd while our libs execute.
+  function withAMDOff(loader) {
+    var d = window.define, amd = d && d.amd;
+    if (amd) d.amd = false;
+    function restore() { if (amd && window.define === d) d.amd = amd; }
+    return loader().then(function (v) { restore(); return v; }, function (e) { restore(); throw e; });
+  }
   function loadLibs() {
     if (libsReady) return Promise.resolve();
     if (libsLoading) return libsLoading;
@@ -44,9 +53,15 @@
       lk.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
       document.head.appendChild(lk);
     }
-    libsLoading = loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js')
-      .then(function () { return loadScript('https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js'); })
-      .then(function () { libsReady = true; })
+    libsLoading = withAMDOff(function () {
+      return loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js')
+        .then(function () { return loadScript('https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js'); });
+    })
+      .then(function () {
+        // onload alone isn't proof: an AMD-eaten Leaflet still fires onload with no window.L
+        if (!window.L || !window.L.map || !window.L.heatLayer) throw new Error('leaflet not on window');
+        libsReady = true;
+      })
       .catch(function (e) { libsLoading = null; throw e; }); // a cached rejection would block every retry
     return libsLoading;
   }
