@@ -22,6 +22,8 @@
   var BASE = 'https://sp210-collab.github.io/rapidpatch-at-index/';
   var DAYS = 884; // 1 Jan 2024 – 3 Jun 2026
   var D = null, libsLoading = null, libsReady = false, mapBooted = false;
+  var mapBooting = false;   // boot in flight — heal/tick must not touch the canvas
+  var wantMap = false;      // home visitor tapped "Load the map" — re-boot after a hydration wipe
 
   function fmt(n) { return n.toLocaleString('en-NZ'); }
 
@@ -44,7 +46,8 @@
     }
     libsLoading = loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js')
       .then(function () { return loadScript('https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js'); })
-      .then(function () { libsReady = true; });
+      .then(function () { libsReady = true; })
+      .catch(function (e) { libsLoading = null; throw e; }); // a cached rejection would block every retry
     return libsLoading;
   }
   function loadData() {
@@ -54,13 +57,14 @@
   }
 
   function bootMap(canvasId, opts) {
-    if (mapBooted) return;
+    if (mapBooted || mapBooting) return;
     if (!document.getElementById(canvasId)) return;
-    mapBooted = true;
+    mapBooting = true;
     Promise.all([loadLibs(), loadData()]).then(function () {
       var el = document.getElementById(canvasId);
-      if (!el) { mapBooted = false; return; }
+      if (!el) { mapBooting = false; return; }
       el.innerHTML = '';
+      if (el._leaflet_id) el._leaflet_id = undefined; // stale id after a wipe -> "container already initialized"
       var L = window.L;
       var map = L.map(el, { scrollWheelZoom: false, zoomAnimation: false, fadeAnimation: false, markerZoomAnimation: false });
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -81,8 +85,17 @@
       map.fitBounds(L.latLngBounds(D.roads.map(function (r) { return [r.lat, r.lng]; })).pad(0.05));
       map.on('click', function () { map.scrollWheelZoom.enable(); });
       map.on('mouseout', function () { map.scrollWheelZoom.disable(); });
+      mapBooted = true; mapBooting = false;
       if (opts && opts.after) opts.after();
-    }).catch(function () { mapBooted = false; });
+    }).catch(function () {
+      mapBooted = false; mapBooting = false;
+      // never leave a blank box: put the placeholder (with retry) back if Leaflet DOM isn't there
+      var el = document.getElementById(canvasId);
+      if (el && !el.querySelector('.leaflet-pane')) {
+        if (canvasId === 'rpmapCanvas') el.innerHTML = staticHTML('Map didn’t load — tap to try again');
+        // dash canvas: healCanvas() re-boots it on the next tick
+      }
+    });
   }
 
   function ensureStyle(id, css) {
@@ -124,6 +137,14 @@
     '@media(max-width:540px){#rpmap{padding:40px 14px 48px}#rpmap .rpm-map{height:380px}#rpmap .rpm-stat{min-width:130px;padding:10px 14px}#rpmap .rpm-stat .n{font-size:22px}}'
   ].join('\n');
 
+  function staticHTML(note) {
+    return '<div class="rpm-static" id="rpmapStatic">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="#F0A52D" stroke-width="1.6" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>' +
+      '<button type="button" class="rpm-loadbtn" id="rpmapLoad" aria-label="Load the interactive Auckland pothole map">▶ Load the interactive map</button>' +
+      '<p class="rpm-static-note">' + (note || '289 roads · loads on tap to keep the page fast') + '</p>' +
+    '</div>';
+  }
+
   function homeHTML() {
     var s = D ? D.stats : null;
     return '<div class="rpm-wrap">' +
@@ -131,11 +152,7 @@
       '<h2>The Auckland Pothole Map</h2>' +
       '<p class="rpm-sub">We asked Auckland Transport for its full pothole dispatch log — every job, every road, 29 months. Here’s where Auckland is breaking, mapped from AT’s own data.</p>' +
       '<div class="rpm-stats">' + statChips(s) + '</div>' +
-      '<div class="rpm-map" id="rpmapCanvas"><div class="rpm-static" id="rpmapStatic">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="#F0A52D" stroke-width="1.6" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>' +
-        '<button type="button" class="rpm-loadbtn" id="rpmapLoad" aria-label="Load the interactive Auckland pothole map">▶ Load the interactive map</button>' +
-        '<p class="rpm-static-note">289 roads · loads on tap to keep the page fast</p>' +
-      '</div></div>' +
+      '<div class="rpm-map" id="rpmapCanvas">' + staticHTML() + '</div>' +
       '<p class="rpm-cap">Dot = road, sized by pothole dispatch count · top 300 roads · source: AT LGOIMA CAS-1344360-H7J1V4 · tiles © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></p>' +
       '<div class="rpm-ctas">' +
         '<a class="rpm-btn primary" href="/post/the-rapidpatch-at-pothole-index-auckland-transport-s-response-time-data-suburb-by-suburb">Explore the full AT Pothole Index →</a>' +
@@ -164,19 +181,8 @@
     else anchor.parent.appendChild(sec);
     mapBooted = false;
     // Lazy: do NOT auto-boot Leaflet (it composites continuously on mobile GPUs and it's below the fold).
-    // Render a static placeholder + "Load interactive map" button; boot only on tap.
-    var loadBtn = document.getElementById('rpmapLoad');
-    if (loadBtn && !loadBtn.__rpBound) {
-      loadBtn.__rpBound = true;
-      loadBtn.addEventListener('click', function () {
-        var st = document.getElementById('rpmapStatic');
-        if (st) st.innerHTML = '<div class="rpm-loading">Loading the map…</div>';
-        bootMap('rpmapCanvas', { big: false, after: function () {
-          var wrap = document.querySelector('#rpmap .rpm-stats');
-          if (wrap && D) wrap.innerHTML = statChips(D.stats);
-        }});
-      });
-    }
+    // Static placeholder + "Load interactive map" button; boot on tap via the delegated
+    // document-level listener below (survives Wix hydration re-renders of the button node).
     // Warm the stat chips with real data without booting the map (cheap fetch, no Leaflet/tiles).
     if (!D) loadData().then(function () {
       var wrap = document.querySelector('#rpmap .rpm-stats');
@@ -184,6 +190,24 @@
     });
     return true;
   }
+
+  function startHomeBoot() {
+    wantMap = true;
+    var st = document.getElementById('rpmapStatic');
+    if (st) st.innerHTML = '<div class="rpm-loading">Loading the map…</div>';
+    bootMap('rpmapCanvas', { big: false, after: function () {
+      var wrap = document.querySelector('#rpmap .rpm-stats');
+      if (wrap && D) wrap.innerHTML = statChips(D.stats);
+    }});
+  }
+  // Delegated: the button node gets cloned/wiped by Wix hydration, a direct listener dies with it.
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    while (t && t.nodeType === 1) {
+      if (t.id === 'rpmapLoad') { startHomeBoot(); return; }
+      t = t.parentNode;
+    }
+  }, true);
 
   /* ================= DASH: full on-domain dashboard ================= */
   var CSS_DASH = [
@@ -417,8 +441,30 @@
   }
 
   /* ---------------- keep-alive ---------------- */
+  // Wix React hydration can strip the CHILDREN of the injected canvas while the section itself
+  // survives — the old section-exists check never repaired that, leaving a permanent blank box.
+  function healCanvas() {
+    if (mapBooting) return;
+    if (MODE === 'home') {
+      var el = document.getElementById('rpmapCanvas');
+      if (!el) return;
+      if (el.querySelector('.leaflet-pane') || el.querySelector('.rpm-static')) return; // healthy
+      mapBooted = false;
+      if (el._leaflet_id) el._leaflet_id = undefined;
+      if (wantMap) startHomeBoot();            // visitor already asked for the map — bring it back
+      else el.innerHTML = staticHTML();        // restore the load button
+    } else if (MODE === 'dash') {
+      var el2 = document.getElementById('rpdashCanvas');
+      if (!el2) return;
+      if (el2.querySelector('.leaflet-pane')) return; // healthy
+      mapBooted = false;
+      if (el2._leaflet_id) el2._leaflet_id = undefined;
+      el2.innerHTML = '<div class="rpm-loading">Loading the map…</div>';
+      bootMap('rpdashCanvas', { big: true });
+    }
+  }
   var injectFn = MODE === 'home' ? injectHome : (MODE === 'dash' ? injectDash : function () {});
-  function tick() { injectMenu(); injectFn(); }
+  function tick() { injectMenu(); injectFn(); healCanvas(); }
   var t0 = Date.now();
   var iv = setInterval(function () {
     tick();
