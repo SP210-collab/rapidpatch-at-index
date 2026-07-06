@@ -1,0 +1,151 @@
+<script>(function(){
+var PHONE="+64277372858",DISP="027 737 2858",HEROID="rp-c2-hero-root";
+var path=(location.pathname||"").toLowerCase();
+var legacy={
+"/post/motel-hotel-asphalt-repair-nz":"/post/motel-and-hotel-carpark-asphalt-repair-nz-booking-photo-ready-off-peak-scheduling",
+"/post/asphalt-repaving-before-leasing-property-nz":"/post/asphalt-repaving-before-leasing-a-property-nz-landlord-pre-handover-guide"
+};
+if(legacy[path]){location.replace(legacy[path]+location.search+location.hash);return}
+if(path.replace(/\/+$/,"")!=="/contact")return;
+document.body.classList.add("rp-c2");
+var ICONS={
+phone:'<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/>',
+msg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/>',
+wa:'<path d="M22 12a10 10 0 0 1-14.9 8.7L2 22l1.4-5A10 10 0 1 1 22 12Z"/><path d="m9.5 8.5 1 2.5-1.5 1c.5 1.5 1.5 2.5 3 3l1-1.5 2.5 1"/>',
+mail:'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+doc:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>',
+arrow:'<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+check:'<polyline points="20 6 9 17 4 12"/>',
+house:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+park:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8h4a3 3 0 0 1 0 6H9z"/><line x1="9" y1="8" x2="9" y2="16"/>',
+clip:'<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/>',
+shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>',
+hand:'<path d="M7 11V6a2 2 0 0 1 4 0v5"/><path d="M11 11V4a2 2 0 0 1 4 0v7"/><path d="M15 11V6a2 2 0 0 1 4 0v8a8 8 0 0 1-8 8H8a5 5 0 0 1-5-5 3 3 0 0 1 6 0"/>',
+send:'<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>'
+};
+function svg(n,c){return '<svg xmlns="http://www.w3.org/2000/svg" class="'+(c||"")+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICONS[n]||"")+'</svg>'}
+function nzNow(){return new Date(new Date().toLocaleString("en-US",{timeZone:"Pacific/Auckland"}))}
+function timeChip(){var n=nzNow(),dow=n.getDay(),h=n.getHours(),m=n.getMinutes();
+var ds=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+var hr=((h+11)%12)+1,ap=h<12?"AM":"PM",mm=(m<10?"0":"")+m;
+var p=ds[dow]+" "+hr+":"+mm+" "+ap+" in Auckland";
+if(dow===0)return{label:p+" — Sunday quiet hours. Hazards: call. Routine quotes Monday.",on:false};
+if(h>=7&&h<12)return{label:p+" — Steve is on the tools. Liz reads texts within the hour.",on:true};
+if(h>=12&&h<18)return{label:p+" — Liz on bookings this afternoon. Quotes back inside 2 hours.",on:true};
+if(h>=18&&h<22)return{label:p+" — After hours. Replies from 7am.",on:false};
+return{label:p+" — Overnight. Hazards only on "+DISP+".",on:false}
+}
+function html(){
+var c=timeChip();
+return '<section id="'+HEROID+'" class="rp-c2-hero" aria-label="Contact Rapidpatch"><div class="rp-c2-wrap">'+
+'<span class="rp-c2-pill '+(c.on?"":"rp-off")+'" role="status"><span class="rp-c2-dot"></span>'+c.label+'</span>'+
+'<h1 class="rp-c2-h1">Get in touch with <em>Rapidpatch</em>.</h1>'+
+'<p class="rp-c2-sub">Auckland\'s 48-hour pothole, carpark and driveway crew. Pick the channel that fits — phone, text, photo email, WhatsApp or form. One person reads every message.</p>'+
+'<p class="rp-c2-def"><strong>Rapidpatch</strong> is Auckland\'s 48-hour pothole, carpark and driveway repair service. Fixed price from a photo. 12-month workmanship warranty. Serving the Auckland region since 2004.</p>'+
+'<div class="rp-c2-ctas">'+
+'<a class="rp-c2-cta rp-c2-primary" href="tel:'+PHONE+'">'+svg("phone","rp-c2-cta-svg")+'<p class="rp-c2-cta-label">Call '+DISP+'</p><p class="rp-c2-cta-meta">Live Mon–Sat 7am–6pm · 24/7 hazards</p></a>'+
+'<a class="rp-c2-cta" href="sms:'+PHONE+'?body=Hi%20Rapidpatch%2C%20I%27d%20like%20a%20quote%20for%20">'+svg("msg","rp-c2-cta-svg")+'<p class="rp-c2-cta-label">Text + photos</p><p class="rp-c2-cta-meta">SMS or iMessage · '+DISP+'</p></a>'+
+'<a class="rp-c2-cta" href="https://wa.me/64277372858?text=Hi%20Rapidpatch%2C%20I%27d%20like%20a%20quote%20for%20" target="_blank" rel="noopener">'+svg("wa","rp-c2-cta-svg")+'<p class="rp-c2-cta-label">WhatsApp</p><p class="rp-c2-cta-meta">Best for multiple photos</p></a>'+
+'<a class="rp-c2-cta" href="mailto:fix@rapidpatch.co.nz?subject=Quote%20request&body=Address%3A%20%0ADescription%3A%20%0APhotos%20attached%3A%20">'+svg("mail","rp-c2-cta-svg")+'<p class="rp-c2-cta-label">Email photos</p><p class="rp-c2-cta-meta">fix@rapidpatch.co.nz</p></a>'+
+'<a class="rp-c2-cta" href="/form">'+svg("doc","rp-c2-cta-svg")+'<p class="rp-c2-cta-label">Full quote form</p><p class="rp-c2-cta-meta">Fixed price in 24 hours</p></a>'+
+'</div>'+
+'<div class="rp-c2-trust">'+
+'<span>'+svg("check")+'12-month warranty</span>'+
+'<span>'+svg("check")+'Public liability insured</span>'+
+'<span>'+svg("check")+'GST registered</span>'+
+'<span>'+svg("check")+'NZBN 9429053369697</span>'+
+'<span>'+svg("check")+'Fixed-price quotes</span>'+
+'<span>'+svg("check")+'No site-visit needed</span>'+
+'</div>'+
+'<div class="rp-c2-sec"><h2 class="rp-c2-h2">Which best describes you?</h2><p class="rp-c2-h2-meta">Jump straight to the page that matches your job.</p>'+
+'<div class="rp-c2-personas">'+
+'<a class="rp-c2-persona rp-c2-primary" href="/post/body-corporate-pothole-repair-auckland-the-five-step-process-from-photos-to-fixed-price">'+svg("clip","rp-c2-persona-svg")+'<div><p class="rp-c2-persona-t">Body corporate manager? AGM approval made easy.</p><p class="rp-c2-persona-d">Insurance-ready PDF with line items, GST, NZBN and public liability. Five-step process — same crew Steve runs for Milford and Onehunga.</p><span class="rp-c2-persona-arrow">See the 5-step process →</span></div></a>'+
+'<a class="rp-c2-persona" href="/carpark-repair">'+svg("park","rp-c2-persona-svg")+'<p class="rp-c2-persona-t">Commercial carpark manager</p><p class="rp-c2-persona-d">Retail, hospitality, fleet — bulk pricing, overnight work.</p><span class="rp-c2-persona-arrow">Commercial →</span></a>'+
+'<a class="rp-c2-persona" href="/post/auckland-pre-sale-driveway-repair">'+svg("house","rp-c2-persona-svg")+'<p class="rp-c2-persona-t">Homeowner — driveway or pothole</p><p class="rp-c2-persona-d">Fixed-price patch or full re-lay. No site visit.</p><span class="rp-c2-persona-arrow">Residential →</span></a>'+
+'<a class="rp-c2-persona" href="/post/pothole-damage-claim-in-new-zealand-how-to-get-nzta-your-council-or-your-insurer-to-pay">'+svg("shield","rp-c2-persona-svg")+'<p class="rp-c2-persona-t">Insurance claim or NZTA</p><p class="rp-c2-persona-d">Photos + invoice formatted for claims.</p><span class="rp-c2-persona-arrow">Insurance →</span></a>'+
+'<a class="rp-c2-persona" href="/post/auckland-asphalt-contractor-cold-outreach-scripts">'+svg("hand","rp-c2-persona-svg")+'<p class="rp-c2-persona-t">Contractor partner</p><p class="rp-c2-persona-d">Auckland crew? Overflow work available.</p><span class="rp-c2-persona-arrow">Partners →</span></a>'+
+'</div></div>'+
+'<div class="rp-c2-sec"><h2 class="rp-c2-h2">Or send a quick photo quote</h2><p class="rp-c2-h2-meta">Five quick fields. Lands straight in our quote queue.</p>'+
+'<form class="rp-c2-form" id="rp-c2-quick" novalidate>'+
+'<div class="rp-c2-form-grid"><div class="rp-c2-form-row"><label for="qn">Your name</label><input id="qn" type="text" placeholder="First name" autocomplete="given-name" required></div><div class="rp-c2-form-row"><label for="qp">Phone</label><input id="qp" type="tel" placeholder="027…" autocomplete="tel" required></div></div>'+
+'<div class="rp-c2-form-row"><label for="qe">Email</label><input id="qe" type="email" placeholder="you@example.co.nz" autocomplete="email" required></div>'+
+'<div class="rp-c2-form-row"><label for="qa">Site address</label><input id="qa" type="text" placeholder="Street, suburb, Auckland" autocomplete="street-address" required></div>'+
+'<div class="rp-c2-form-row"><label for="qd">One-line description (optional)</label><textarea id="qd" placeholder="e.g. 3 potholes near the entrance, body corp carpark, AGM approved"></textarea></div>'+
+'<button class="rp-c2-form-submit" type="submit">Send to Rapidpatch '+svg("send")+'</button>'+
+'<p class="rp-c2-form-help">Goes straight to Rapidpatch — same queue as the full form. Fixed quote within 24 working hours; we\'ll ask for photos by reply. Want to attach photos now? <a href="/form">Use the full form</a>.</p>'+
+'</form></div>'+
+'<div class="rp-c2-sec"><h2 class="rp-c2-h2">What happens after you reach out</h2><p class="rp-c2-h2-meta">Same person from quote to photo report.</p>'+
+'<div class="rp-c2-flow">'+
+'<div class="rp-c2-step"><b>You share photos + address</b><span>Any channel — phone, text, WhatsApp, email or form.</span></div>'+
+'<div class="rp-c2-step"><b>We send a fixed quote</b><span>Within 24 working hours. PDF if you need it.</span></div>'+
+'<div class="rp-c2-step"><b>You pick a day</b><span>Standard 48 hours · urgent same-day · overnight retail.</span></div>'+
+'<div class="rp-c2-step"><b>We patch + photo-prove</b><span>Before/after emailed when crew leaves. 12-month warranty.</span></div>'+
+'</div></div>'+
+'<div class="rp-c2-sec"><div class="rp-c2-team"><div class="rp-c2-team-inits" aria-hidden="true"><span>S</span><span>L</span></div><div class="rp-c2-team-t"><b>Steve &amp; Liz, Rapidpatch</b><p>Steve runs the crew and quotes; Liz handles bookings, body-corp paperwork and after-hours messages. Calls and texts to '+DISP+' reach one of us directly — no call centre.</p></div></div></div>'+
+'<div class="rp-c2-sec"><div class="rp-c2-area"><h3 class="rp-c2-area-h3">Auckland regions we cover</h3>'+
+'<div class="rp-c2-area-list">'+
+'<div><strong>North Shore</strong>Takapuna, Albany, Devonport, Browns Bay, Glenfield</div>'+
+'<div><strong>Central</strong>Ponsonby, Mt Eden, Epsom, Grey Lynn, Newmarket, Onehunga</div>'+
+'<div><strong>East</strong>Ellerslie, Remuera, Howick, Botany, Pakuranga</div>'+
+'<div><strong>South</strong>Manukau, Papatoetoe, Mangere, Otara, Papakura</div>'+
+'<div><strong>West</strong>Henderson, New Lynn, Titirangi, Avondale, Glen Eden</div>'+
+'</div>'+
+'<p class="rp-c2-area-foot">Outside Auckland? Hamilton, Tauranga, Wellington, Christchurch and Dunedin run through our <a href="/about">approved-partner network</a>. Text the address and we route within 24 hours.</p>'+
+'</div></div>'+
+'<div class="rp-c2-sec"><h2 class="rp-c2-h2">Common questions</h2>'+
+'<div class="rp-c2-faq">'+
+'<details><summary>Fastest way to reach you?</summary><p>Call or text '+DISP+' Mon–Sat 7am–6pm — one of us picks up live. Texts and photo emails read within the hour.</p></details>'+
+'<details><summary>Can I just send photos and get a price?</summary><p>Yes — 90% of jobs start that way. Four photos (wide, close-up, depth, address) to fix@rapidpatch.co.nz or text to '+DISP+'. Fixed price back, no site visit.</p></details>'+
+'<details><summary>Do you cover outside Auckland?</summary><p>Auckland region full service. Hamilton, Tauranga, Wellington, Christchurch, Dunedin route through our approved-partner network within 24 hours.</p></details>'+
+'<details><summary>Is the 24/7 line for everyone?</summary><p>After-hours number is for genuine site safety hazards only — open holes in commercial carparks, blocked driveways, fleet yard issues. Routine quotes in business hours.</p></details>'+
+'<details><summary>Invoices for body corp / insurance?</summary><p>Yes. Every quote is a PDF with line items, GST, NZBN and our public liability number. Forward straight to owners for AGM approval.</p></details>'+
+'<details><summary>What if I need it done tonight?</summary><p>Same-day and overnight available for commercial sites — retail carparks, drive-thrus, motels, forecourts. Call '+DISP+' directly; do not use the form for urgent work.</p></details>'+
+'</div></div>'+
+'</div></section>'+
+'<a class="rp-c2-fab" href="tel:'+PHONE+'" aria-label="Call Rapidpatch">'+svg("phone")+DISP+'</a>';
+}
+function inject(){
+if(document.getElementById(HEROID))return;
+var wrap=document.createElement("div");
+wrap.innerHTML=html();
+var nodes=Array.prototype.slice.call(wrap.children);
+var first=document.body.firstChild;
+nodes.forEach(function(n){if(first)document.body.insertBefore(n,first);else document.body.appendChild(n)});
+wire();
+}
+function wire(){
+// Quick-form submit lives in contact-quick.js (GitHub Pages): POSTs into the Wix Forms
+// inquiry pipeline (form 3c57c17a) — no mailto. Loaded once in boot().
+window.addEventListener("scroll",function(){var fab=document.querySelector(".rp-c2-fab");if(fab&&window.scrollY>480)fab.classList.add("rp-c2-fab-show")},{passive:true});
+}
+function sweepH1(){
+var hero=document.getElementById(HEROID);if(!hero)return;
+document.querySelectorAll("h1").forEach(function(h){
+if(hero.contains(h))return;
+var h2=document.createElement("h2");
+for(var i=0;i<h.attributes.length;i++)h2.setAttribute(h.attributes[i].name,h.attributes[i].value);
+h2.innerHTML=h.innerHTML;
+h2.setAttribute("data-rp-demoted","1");
+if(h.parentNode)h.parentNode.replaceChild(h2,h);
+});
+}
+function guard(){
+new MutationObserver(function(){
+if(!document.getElementById(HEROID)&&document.body){inject();sweepH1()}
+}).observe(document.body,{childList:true,subtree:false});
+}
+function startClock(){
+setInterval(function(){
+var pill=document.querySelector("#"+HEROID+" .rp-c2-pill");if(!pill)return;
+var c=timeChip();
+pill.classList.toggle("rp-off",!c.on);
+var dot=pill.querySelector(".rp-c2-dot");
+pill.textContent="";
+if(dot)pill.appendChild(dot);
+pill.appendChild(document.createTextNode(c.label));
+},60000);
+}
+function boot(){inject();guard();sweepH1();startClock();setTimeout(sweepH1,1500);setTimeout(sweepH1,3500);
+if(!document.getElementById("rpq-loader")){var qs=document.createElement("script");qs.id="rpq-loader";qs.src="https://sp210-collab.github.io/rapidpatch-at-index/contact-quick.js?v=1";qs.defer=true;document.head.appendChild(qs)}}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
+})();</script>
