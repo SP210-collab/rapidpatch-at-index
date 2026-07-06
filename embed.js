@@ -98,6 +98,7 @@
           '<br><strong>' + fmt(r.n) + '</strong> pothole dispatches in 29 months');
       });
       map.fitBounds(L.latLngBounds(D.roads.map(function (r) { return [r.lat, r.lng]; })).pad(0.05));
+      if (!(opts && opts.big)) map.setZoom(map.getZoom() + 3); // home teaser: 3 levels tighter than fitBounds (metro, not upper North Island)
       map.on('click', function () { map.scrollWheelZoom.enable(); });
       map.on('mouseout', function () { map.scrollWheelZoom.disable(); });
       mapBooted = true; mapBooting = false;
